@@ -1,0 +1,43 @@
+spring:
+  cloud:
+    gateway:
+      # Глобальные настройки Retry (новый формат)
+      default-filters:
+        - name: Retry
+          args:
+            retries: 3
+            series: SERVER_ERROR, NOT_FOUND
+            methods: GET,HEAD
+            exceptions: java.io.IOException, java.util.concurrent.TimeoutException
+            backoff:
+              firstBackoff: 10ms
+              maxBackoff: 100ms
+              factor: 2
+              basedOnPreviousValue: false
+
+      # Настройки маршрутов
+      routes:
+        - id: main_service_route
+          uri: lb://main-service
+          predicates:
+            - Path=/** # перенаправляем все запросы на main-service
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway,metrics,configprops
+  endpoint:
+    gateway:
+      enabled: true
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.boot.context.config: INFO
+
+# Для отладки
+debug: true
