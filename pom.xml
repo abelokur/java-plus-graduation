@@ -30,6 +30,7 @@
         <!-- Apps -->
         <stats-client.version>1.0-SNAPSHOT</stats-client.version>
         <stats-dto.version>1.0-SNAPSHOT</stats-dto.version>
+        <interaction-api.version>1.0-SNAPSHOT</interaction-api.version>
 
         <!-- DataBase -->
         <postgresql.version>42.7.7</postgresql.version>
