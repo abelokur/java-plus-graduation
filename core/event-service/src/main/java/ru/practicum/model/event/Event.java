@@ -2,8 +2,8 @@ package ru.practicum.model.event;
 
 import jakarta.persistence.*;
 import lombok.*;
+import ru.practicum.model.EventState;
 import ru.practicum.model.category.Category;
-import ru.practicum.model.user.User;
 
 import java.time.LocalDateTime;
 
@@ -21,10 +21,8 @@ public class Event {
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "initiator_id", nullable = false)
-    @ToString.Exclude
-    private User initiator;
+    @Column(name = "initiator_id", nullable = false)
+    private Long initiatorId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
@@ -42,7 +40,7 @@ public class Event {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "state", length = 20, nullable = false)
-    private State state;
+    private EventState state;
 
     @Embedded
     private Location location;

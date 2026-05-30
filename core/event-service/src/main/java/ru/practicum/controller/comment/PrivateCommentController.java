@@ -7,9 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.annotation.LogAllMethods;
 import ru.practicum.dto.comment.CommentDto;
-import ru.practicum.dto.comment.NewCommentDto;
-import ru.practicum.dto.comment.UpdateCommentDto;
+import ru.practicum.dto.comment.NewCommentRequest;
+import ru.practicum.dto.comment.UpdateCommentRequest;
 import ru.practicum.service.comment.CommentService;
 
 import java.util.List;
@@ -19,35 +20,32 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
+@LogAllMethods
 public class PrivateCommentController {
     private final CommentService commentService;
 
     @GetMapping
-    public List<CommentDto> getComments(@PathVariable @Positive long userId) {
-        log.info("Private: Method launched (getComments({}))", userId);
+    public List<CommentDto> getComments(@PathVariable @Positive Long userId) {
         return commentService.getComments(userId);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CommentDto createComment(@PathVariable @Positive long userId,
-                                    @RequestBody @Valid NewCommentDto commentDto) {
-        log.info("Private: Method launched (createComment({}, {}))", userId, commentDto);
+    public CommentDto createComment(@PathVariable @Positive Long userId,
+                                    @RequestBody @Valid NewCommentRequest commentDto) {
         return commentService.createComment(userId, commentDto);
     }
 
     @PatchMapping
-    public CommentDto updateComment(@PathVariable @Positive long userId,
-                                    @RequestBody @Valid UpdateCommentDto commentDto) {
-        log.info("Private: Method launched (updateComment({}, {}))", userId, commentDto);
+    public CommentDto updateComment(@PathVariable @Positive Long userId,
+                                    @RequestBody @Valid UpdateCommentRequest commentDto) {
         return commentService.updateComment(userId, commentDto);
     }
 
     @DeleteMapping("/{comId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteComment(@PathVariable @Positive long userId,
-                              @PathVariable @Positive long comId) {
-        log.info("Private: Method launched (deleteComment({}, {}))", userId, comId);
+    public void deleteComment(@PathVariable @Positive Long userId,
+                              @PathVariable @Positive Long comId) {
         commentService.deleteComment(userId, comId);
     }
 }

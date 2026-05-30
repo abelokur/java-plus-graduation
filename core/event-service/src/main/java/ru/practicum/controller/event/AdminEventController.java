@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.annotation.LogAllMethods;
 import ru.practicum.dto.event.AdminEventParam;
 import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.dto.event.UpdateEventAdminRequest;
@@ -19,6 +20,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @Validated
+@LogAllMethods
 public class AdminEventController {
     private final EventService eventService;
 
@@ -27,7 +29,6 @@ public class AdminEventController {
     public List<EventFullDto> findAll(
             @Valid @ModelAttribute AdminEventParam params
     ) {
-        log.info("Admin: Method launched (findAllAdmin({}))", params);
         return eventService.findAllAdmin(params);
     }
 
@@ -37,7 +38,6 @@ public class AdminEventController {
             @PathVariable @Positive Long eventId,
             @Valid @RequestBody UpdateEventAdminRequest event
     ) {
-        log.info("Admin: Method launched (delete(LLong eventId = {}, UpdateEventAdminRequest event = {}))", eventId, event);
         return eventService.updateAdminEvent(eventId, event);
     }
 }

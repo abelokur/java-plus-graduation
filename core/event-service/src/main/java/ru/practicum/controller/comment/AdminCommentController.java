@@ -6,8 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.annotation.LogAllMethods;
 import ru.practicum.dto.comment.StateCommentDto;
-import ru.practicum.model.comment.DateSort;
+import ru.practicum.model.CommentDateSort;
 import ru.practicum.service.comment.CommentService;
 
 import java.util.List;
@@ -17,31 +18,29 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
+@LogAllMethods
 public class AdminCommentController {
     private final CommentService commentService;
 
     @GetMapping
     public List<StateCommentDto> getComments(
             @RequestParam(required = false) String text,
-            @RequestParam(defaultValue = "ASC") DateSort sort
+            @RequestParam(defaultValue = "ASC") CommentDateSort sort
     ) {
-        log.info("Admin: Method launched (getComments(text = {}, sort = {}))", text, sort);
         return commentService.getComments(text, sort);
     }
 
     @PatchMapping("/{comId}")
     public StateCommentDto reviewComment(
-            @PathVariable @Positive long comId,
+            @PathVariable @Positive Long comId,
             @RequestParam boolean approved
     ) {
-        log.info("Admin: Method launched (reviewComment(comId = {}, approved = {}))", comId, approved);
         return commentService.reviewComment(comId, approved);
     }
 
     @DeleteMapping("/{comId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteComment(@PathVariable @Positive long comId) {
-        log.info("Admin: Method launched (deleteComment(comId = {}))", comId);
+    public void deleteComment(@PathVariable @Positive Long comId) {
         commentService.deleteComment(comId);
     }
 }

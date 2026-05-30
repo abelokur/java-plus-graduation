@@ -1,16 +1,17 @@
 package ru.practicum.model.category.mapper;
 
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingConstants;
 import ru.practicum.dto.category.CategoryDto;
 import ru.practicum.model.category.Category;
 
-public class CategoryMapper {
-    public static Category mapToCategory(CategoryDto dto) {
-        return Category.builder()
-                .name(dto.name())
-                .build();
-    }
+import java.util.List;
 
-    public static CategoryDto mapToCategoryDto(Category category) {
-        return new CategoryDto(category.getId(), category.getName());
-    }
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
+public interface CategoryMapper {
+    CategoryDto toDto(Category category);
+
+    List<CategoryDto> toDto(List<Category> categories);
+
+    Category toEntity(CategoryDto categoryDto);
 }

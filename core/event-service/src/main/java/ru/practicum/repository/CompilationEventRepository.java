@@ -22,7 +22,7 @@ public interface CompilationEventRepository extends JpaRepository<CompilationEve
                                     join ce2.compilation as c
                               where c.id = :compId)
             """)
-    void deleteByCompilationId(@Param("compId") long compilationId);
+    void deleteByCompilationId(@Param("compId") Long compilationId);
 
     @Query("""
             select new ru.practicum.model.compilation.EventCompilationId(c.id, ce.event)

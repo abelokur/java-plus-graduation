@@ -2,8 +2,9 @@ package ru.practicum.model.comment;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import ru.practicum.model.CommentState;
 import ru.practicum.model.event.Event;
-import ru.practicum.model.user.User;
 
 import java.time.LocalDateTime;
 
@@ -19,19 +20,23 @@ public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "author_id")
-    @ToString.Exclude
-    private User author;
+
+    @Column(name = "author_id")
+    private Long authorId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id")
     @ToString.Exclude
     private Event event;
+
     @Column(nullable = false)
     private String text;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "state", nullable = false)
     private CommentState state;
+
+    @CreationTimestamp
     @Column(name = "created_on")
     private LocalDateTime created;
 }

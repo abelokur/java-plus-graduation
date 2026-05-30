@@ -4,15 +4,18 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.client.user.UserFeignClient;
 import ru.practicum.dto.compilation.CompilationDto;
-import ru.practicum.dto.compilation.CompilationDtoMapper;
-import ru.practicum.dto.compilation.NewCompilationDto;
+import ru.practicum.dto.compilation.NewCompilationRequest;
 import ru.practicum.dto.compilation.UpdateCompilationRequest;
 import ru.practicum.dto.event.EventShortDto;
+import ru.practicum.dto.user.UserDto;
+import ru.practicum.dto.user.UserShortDto;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.model.compilation.Compilation;
 import ru.practicum.model.compilation.CompilationEvent;
 import ru.practicum.model.compilation.EventCompilationId;
+import ru.practicum.model.compilation.mapper.CompilationMapper;
 import ru.practicum.model.event.Event;
 import ru.practicum.model.event.mapper.EventMapper;
 import ru.practicum.repository.CompilationEventRepository;
@@ -31,15 +34,20 @@ public class CompilationServiceImpl implements CompilationService {
     private final EventRepository eventRepository;
     private final CompilationRepository compilationRepository;
     private final CompilationEventRepository compilationEventRepository;
+
     private final EventMapper eventMapper;
+    private final CompilationMapper compilationMapper;
+
+    private final UserFeignClient userFeignClient;
 
     @Override
-    public CompilationDto createCompilation(NewCompilationDto compilationDto) {
-        Set<Event> events = getEvents(compilationDto.getEventIds());
+    @Transactional
+    public CompilationDto createCompilation(NewCompilationRequest compilationDto) {
+        Set<Event> events = getEvents(compilationDto.eventIds());
 
         final Compilation compilation = compilationRepository.save(Compilation.builder()
-                .title(compilationDto.getTitle())
-                .pinned(compilationDto.getPinned() != null ? compilationDto.getPinned() : false)
+                .title(compilationDto.title())
+                .pinned(compilationDto.pinned() != null ? compilationDto.pinned() : false)
                 .build());
 
         saveCompilationEvents(compilation, events);
@@ -48,27 +56,27 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     @Override
-    public void deleteCompilation(long compilationId) {
+    public void deleteCompilation(Long compilationId) {
         Compilation compilation = getCompilationById(compilationId);
-
         compilationRepository.delete(compilation);
     }
 
     @Override
-    public CompilationDto updateCompilation(long compilationId, UpdateCompilationRequest compilationDto) {
+    @Transactional
+    public CompilationDto updateCompilation(Long compilationId, UpdateCompilationRequest compilationDto) {
         Compilation oldCompilation = getCompilationById(compilationId);
 
-        if (compilationDto.getPinned() != null) {
-            oldCompilation.setPinned(compilationDto.getPinned());
+        if (compilationDto.pinned() != null) {
+            oldCompilation.setPinned(compilationDto.pinned());
         }
 
-        if (compilationDto.getTitle() != null) {
-            oldCompilation.setTitle(compilationDto.getTitle());
+        if (compilationDto.title() != null) {
+            oldCompilation.setTitle(compilationDto.title());
         }
 
         final Compilation newCompilation = compilationRepository.save(oldCompilation);
 
-        Set<Event> events = getEvents(compilationDto.getEventIds());
+        Set<Event> events = getEvents(compilationDto.eventIds());
 
         saveCompilationEvents(newCompilation, events);
 
@@ -83,17 +91,17 @@ public class CompilationServiceImpl implements CompilationService {
         final Map<Long, Set<Event>> eventsByCompilationId = getEventsByCompilations(compilationList);
 
         return compilationList.stream()
-                .map(e -> CompilationDtoMapper.mapCompilationToDto(e, eventsToShortDto(eventsByCompilationId.get(e.getId()))))
+                .map(e -> compilationMapper.toDto(e, eventsToShortDto(eventsByCompilationId.get(e.getId()))))
                 .toList();
     }
 
     @Override
-    public CompilationDto findCompilationById(long compilationId) {
+    public CompilationDto findCompilationById(Long compilationId) {
         final Compilation compilation = getCompilationById(compilationId);
 
         final Map<Long, Set<Event>> eventsByCompilationId = getEventsByCompilations(List.of(compilation));
 
-        return CompilationDtoMapper.mapCompilationToDto(compilation, eventsToShortDto(eventsByCompilationId.get(compilation.getId())));
+        return compilationMapper.toDto(compilation, eventsToShortDto(eventsByCompilationId.get(compilation.getId())));
     }
 
     private Map<Long, Set<Event>> getEventsByCompilations(List<Compilation> compilations) {
@@ -141,8 +149,9 @@ public class CompilationServiceImpl implements CompilationService {
         return Set.copyOf(eventsById.values());
     }
 
-    private Compilation getCompilationById(long compilationId) {
-        return compilationRepository.findById(compilationId).orElseThrow(() -> new NotFoundException("Compilation " + compilationId + " not found!"));
+    private Compilation getCompilationById(Long compilationId) {
+        return compilationRepository.findById(compilationId)
+                .orElseThrow(() -> new NotFoundException("Compilation " + compilationId + " not found!"));
     }
 
     private Set<EventShortDto> eventsToShortDto(Set<Event> events) {
@@ -150,8 +159,16 @@ public class CompilationServiceImpl implements CompilationService {
             return Set.of();
         }
 
+        Set<Long> userIds = events.stream()
+                .map(Event::getInitiatorId)
+                .collect(Collectors.toSet());
+
+        Map<Long, UserShortDto> users = userFeignClient.getUsersByIds(userIds).stream()
+                .collect(Collectors.toMap(UserDto::id, UserDto::toShortDto));
+
+
         return events.stream()
-                .map(eventMapper::toShortDto)
+                .map(event -> eventMapper.toShortDto(event, users.get(event.getInitiatorId())))
                 .collect(Collectors.toSet());
     }
 }

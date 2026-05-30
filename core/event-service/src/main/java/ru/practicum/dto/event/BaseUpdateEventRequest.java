@@ -5,12 +5,12 @@ import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import ru.practicum.model.EventStateAction;
 import ru.practicum.model.event.Location;
-import ru.practicum.model.event.StateAction;
 
 import java.time.LocalDateTime;
 
-import static util.DateTimeFormat.DATE_TIME_PATTERN;
+import static ru.practicum.util.DateTimeFormat.DATE_TIME_PATTERN;
 
 @Getter
 @Setter
@@ -39,7 +39,7 @@ public abstract class BaseUpdateEventRequest {
 
     private Boolean requestModeration;
 
-    private StateAction stateAction = StateAction.NO_ACTION;
+    private EventStateAction stateAction = EventStateAction.NO_ACTION;
 
     @Size(min = 3, max = 120, message = "Название должно быть не менее 3 и не более 200 символов")
     private String title;

@@ -2,7 +2,7 @@ package ru.practicum.dto.event;
 
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
-import ru.practicum.model.request.RequestStatus;
+import ru.practicum.model.RequestStatus;
 
 import java.util.Set;
 

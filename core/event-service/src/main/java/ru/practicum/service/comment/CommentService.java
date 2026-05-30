@@ -1,30 +1,30 @@
 package ru.practicum.service.comment;
 
 import ru.practicum.dto.comment.CommentDto;
-import ru.practicum.dto.comment.NewCommentDto;
+import ru.practicum.dto.comment.NewCommentRequest;
 import ru.practicum.dto.comment.StateCommentDto;
-import ru.practicum.dto.comment.UpdateCommentDto;
-import ru.practicum.model.comment.CommentState;
-import ru.practicum.model.comment.DateSort;
+import ru.practicum.dto.comment.UpdateCommentRequest;
+import ru.practicum.model.CommentDateSort;
+import ru.practicum.model.CommentState;
 
 import java.util.List;
 
 public interface CommentService {
-    CommentDto createComment(long userId, NewCommentDto commentDto);
+    CommentDto createComment(Long userId, NewCommentRequest commentDto);
 
-    List<CommentDto> getComments(long userId);
+    List<CommentDto> getComments(Long userId);
 
-    CommentDto updateComment(long userId, UpdateCommentDto commentDto);
+    CommentDto updateComment(Long userId, UpdateCommentRequest commentDto);
 
-    void deleteComment(long userId, long comId);
+    void deleteComment(Long userId, Long comId);
 
-    List<StateCommentDto> getComments(String text, DateSort sort);
+    List<StateCommentDto> getComments(String text, CommentDateSort sort);
 
-    StateCommentDto reviewComment(long comId, boolean approved);
+    StateCommentDto reviewComment(Long comId, boolean approved);
 
-    void deleteComment(long comId);
+    void deleteComment(Long comId);
 
-    List<CommentDto> getCommentsByState(CommentState state, DateSort sort);
+    List<CommentDto> getCommentsByState(CommentState state, CommentDateSort sort);
 
-    List<CommentDto> getCommentsByEvent(long eventId, DateSort sort);
+    List<CommentDto> getCommentsByEvent(Long eventId, CommentDateSort sort);
 }

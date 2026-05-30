@@ -7,9 +7,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import ru.practicum.dto.event.AdminEventParam;
 import ru.practicum.dto.event.EventPublicParam;
+import ru.practicum.model.EventState;
 import ru.practicum.model.event.Event;
 import ru.practicum.model.event.QEvent;
-import ru.practicum.model.event.State;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,7 +42,7 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
         static BooleanBuilder publicFilters(EventPublicParam params, List<Long> availableIds) {
             BooleanBuilder predicate = new BooleanBuilder();
 
-            addStatePredicate(predicate, State.PUBLISHED);
+            addStatePredicate(predicate, EventState.PUBLISHED);
             addTextPredicate(predicate, params.text());
             addPaidPredicate(predicate, params.paid());
             addCategoriesPredicate(predicate, params.categories());
@@ -60,7 +60,7 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
                 Set<Long> users
         ) {
             if (users != null && !users.isEmpty()) {
-                predicate.and(QEvent.event.initiator.id.in(users));
+                predicate.and(QEvent.event.initiatorId.in(users));
             }
         }
 
@@ -69,7 +69,7 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
          */
         private static void addStatesPredicate(
                 BooleanBuilder predicate,
-                Set<State> states
+                Set<EventState> states
         ) {
             if (states != null && !states.isEmpty()) {
                 predicate.and(QEvent.event.state.in(states));
@@ -81,7 +81,7 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
          */
         private static void addStatePredicate(
                 BooleanBuilder predicate,
-                State state
+                EventState state
         ) {
             if (state != null) {
                 predicate.and(QEvent.event.state.eq(state));
@@ -160,11 +160,11 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
 
     }
 
-    Optional<Event> findByIdAndState(Long eventId, State state);
+    Optional<Event> findByIdAndState(Long eventId, EventState state);
 
-    Optional<Event> findByIdAndInitiator_Id(Long eventId, Long userId);
+    Optional<Event> findByIdAndInitiatorId(Long eventId, Long userId);
 
-    List<Event> findAllByInitiator_Id(Long userId, Pageable pageable);
+    List<Event> findAllByInitiatorId(Long userId, Pageable pageable);
 
     @Query("""
             SELECT e.id

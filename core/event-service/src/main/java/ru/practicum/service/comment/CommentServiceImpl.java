@@ -4,81 +4,85 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.client.user.UserFeignClient;
 import ru.practicum.dto.comment.CommentDto;
-import ru.practicum.dto.comment.NewCommentDto;
+import ru.practicum.dto.comment.NewCommentRequest;
 import ru.practicum.dto.comment.StateCommentDto;
-import ru.practicum.dto.comment.UpdateCommentDto;
+import ru.practicum.dto.comment.UpdateCommentRequest;
+import ru.practicum.dto.user.UserDto;
 import ru.practicum.exception.AccessDeniedException;
 import ru.practicum.exception.CommentStateException;
 import ru.practicum.exception.NotFoundException;
+import ru.practicum.model.CommentDateSort;
+import ru.practicum.model.CommentState;
 import ru.practicum.model.comment.Comment;
-import ru.practicum.model.comment.CommentState;
-import ru.practicum.model.comment.DateSort;
 import ru.practicum.model.comment.mapper.CommentMapper;
 import ru.practicum.model.event.Event;
-import ru.practicum.model.user.User;
 import ru.practicum.repository.CommentRepository;
 import ru.practicum.repository.EventRepository;
-import ru.practicum.repository.UserRepository;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CommentServiceImpl implements CommentService {
+    private final UserFeignClient userFeignClient;
+
     private final CommentRepository commentRepository;
-    private final UserRepository userRepository;
     private final EventRepository eventRepository;
 
-    @Override
-    public List<CommentDto> getComments(long userId) {
-        User author = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
+    private final CommentMapper commentMapper;
 
-        List<Comment> comments = commentRepository.findAllByAuthor(author);
+    @Override
+    public List<CommentDto> getComments(Long userId) {
+        UserDto userDto = userFeignClient.getUserById(userId);
+
+        List<Comment> comments = commentRepository.findAllByAuthorId(userDto.id());
 
         return comments.stream()
-                .map(CommentMapper::mapToCommentDto)
+                .map(comment -> commentMapper.toDto(comment, userDto.name()))
                 .toList();
     }
 
     @Override
     @Transactional
-    public CommentDto createComment(long userId, NewCommentDto commentDto) {
-        User author = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
+    public CommentDto createComment(Long userId, NewCommentRequest request) {
+        UserDto userDto = userFeignClient.getUserById(userId);
 
-        Event event = eventRepository.findById(commentDto.event())
-                .orElseThrow(() -> new NotFoundException("Событие с id " + commentDto.event() + " не найдено"));
+        Event event = eventRepository.findById(request.event())
+                .orElseThrow(() -> new NotFoundException("Событие с id " + request.event() + " не найдено"));
 
-        Comment comment = commentRepository.save(CommentMapper.mapToComment(commentDto, author, event, CommentState.WAITING));
-        return CommentMapper.mapToCommentDto(comment);
+        Comment comment = commentRepository.save(commentMapper.toEntity(request, userDto.id(), event, CommentState.WAITING));
+        return commentMapper.toDto(comment, userDto.name());
     }
 
     @Override
     @Transactional
-    public CommentDto updateComment(long userId, UpdateCommentDto commentDto) {
-        User author = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
+    public CommentDto updateComment(Long userId, UpdateCommentRequest commentDto) {
+        UserDto userDto = userFeignClient.getUserById(userId);
 
         Comment comment = commentRepository.findById(commentDto.id())
                 .orElseThrow(() -> new NotFoundException("Комментария с id " + commentDto.id() + " не найдено"));
 
-        if (comment.getAuthor() != author) {
+        if (!userDto.id().equals(comment.getAuthorId())) {
             throw new AccessDeniedException("Редактировать может только автор комментария");
         }
         comment.setText(commentDto.text());
-        return CommentMapper.mapToCommentDto(comment);
+        return commentMapper.toDto(comment, userDto.name());
     }
 
     @Override
     @Transactional
-    public void deleteComment(long userId, long comId) {
+    public void deleteComment(Long userId, Long comId) {
         Comment comment = commentRepository.findById(comId)
                 .orElseThrow(() -> new NotFoundException("Комментария с id " + comId + " не найдено"));
-        if (comment.getAuthor().getId() == userId) {
+        if (userId.equals(comment.getAuthorId())) {
             commentRepository.delete(comment);
         } else {
             throw new AccessDeniedException("Удалять комментарий может только автор");
@@ -86,16 +90,25 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public List<StateCommentDto> getComments(String text, DateSort sort) {
-        Iterable<Comment> comments = commentRepository.findAll(CommentRepository.Predicate.textFilter(text), getSortDate(sort));
-        return StreamSupport.stream(comments.spliterator(), false)
-                .map(CommentMapper::mapToAdminDto)
+    public List<StateCommentDto> getComments(String text, CommentDateSort sort) {
+        Iterable<Comment> commentsIterable = commentRepository.findAll(CommentRepository.Predicate.textFilter(text), getSortDate(sort));
+        List<Comment> comments = StreamSupport.stream(commentsIterable.spliterator(), false)
+                .toList();
+
+        if (comments.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Map<Long, String> authors = getAuthorsNames(comments);
+
+        return comments.stream()
+                .map(comment -> commentMapper.toAdminDto(comment, authors.get(comment.getAuthorId())))
                 .toList();
     }
 
     @Override
     @Transactional
-    public StateCommentDto reviewComment(long comId, boolean approved) {
+    public StateCommentDto reviewComment(Long comId, boolean approved) {
         Comment comment = commentRepository.findById(comId)
                 .orElseThrow(() -> new NotFoundException("Комментария с id " + comId + " не найдено"));
 
@@ -109,36 +122,68 @@ public class CommentServiceImpl implements CommentService {
             comment.setState(CommentState.REJECTED);
         }
 
-        return CommentMapper.mapToAdminDto(comment);
+        UserDto userDto = userFeignClient.getUserById(comment.getAuthorId());
+
+        return commentMapper.toAdminDto(comment, userDto.name());
     }
 
     @Override
     @Transactional
-    public void deleteComment(long comId) {
+    public void deleteComment(Long comId) {
         Comment comment = commentRepository.findById(comId)
                 .orElseThrow(() -> new NotFoundException("Комментария с id " + comId + " не найдено"));
         commentRepository.delete(comment);
     }
 
     @Override
-    public List<CommentDto> getCommentsByState(CommentState state, DateSort sort) {
-        Iterable<Comment> comments = commentRepository.findAll(CommentRepository.Predicate.stateFilter(state), getSortDate(sort));
-        return StreamSupport.stream(comments.spliterator(), false)
-                .map(CommentMapper::mapToCommentDto)
+    public List<CommentDto> getCommentsByState(CommentState state, CommentDateSort sort) {
+        Iterable<Comment> commentsIterable = commentRepository.findAll(CommentRepository.Predicate.stateFilter(state), getSortDate(sort));
+
+        List<Comment> comments = StreamSupport.stream(commentsIterable.spliterator(), false)
+                .toList();
+
+        if (comments.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Map<Long, String> authors = getAuthorsNames(comments);
+
+        return comments.stream()
+                .map(comment -> commentMapper.toDto(comment, authors.get(comment.getAuthorId())))
                 .toList();
     }
 
     @Override
-    public List<CommentDto> getCommentsByEvent(long eventId, DateSort sort) {
-        Iterable<Comment> comments = commentRepository.findAll(CommentRepository.Predicate.eventFilter(eventId), getSortDate(sort));
-        return StreamSupport.stream(comments.spliterator(), false)
-                .map(CommentMapper::mapToCommentDto)
+    public List<CommentDto> getCommentsByEvent(Long eventId, CommentDateSort sort) {
+        Iterable<Comment> commentsIterable = commentRepository
+                .findAll(CommentRepository.Predicate.eventFilter(eventId), getSortDate(sort));
+
+        List<Comment> comments = StreamSupport.stream(commentsIterable.spliterator(), false)
+                .toList();
+
+        if (comments.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Map<Long, String> authors = getAuthorsNames(comments);
+
+        return comments.stream()
+                .map(comment -> commentMapper.toDto(comment, authors.get(comment.getAuthorId())))
                 .toList();
     }
 
-    private Sort getSortDate(DateSort sort) {
-        return (sort == DateSort.DESC) ?
+    private Sort getSortDate(CommentDateSort sort) {
+        return (sort == CommentDateSort.DESC) ?
                 Sort.by("created").descending() : Sort.by("created").ascending();
+    }
+
+    private Map<Long, String> getAuthorsNames(List<Comment> comments) {
+        Set<Long> authorIds = comments.stream()
+                .map(Comment::getAuthorId)
+                .collect(Collectors.toSet());
+
+        return userFeignClient.getUsersByIds(authorIds).stream()
+                .collect(Collectors.toMap(UserDto::id, UserDto::name));
     }
 
 }

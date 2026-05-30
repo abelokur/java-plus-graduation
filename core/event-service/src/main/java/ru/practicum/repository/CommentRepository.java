@@ -3,15 +3,14 @@ package ru.practicum.repository;
 import com.querydsl.core.BooleanBuilder;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
+import ru.practicum.model.CommentState;
 import ru.practicum.model.comment.Comment;
-import ru.practicum.model.comment.CommentState;
 import ru.practicum.model.comment.QComment;
-import ru.practicum.model.user.User;
 
 import java.util.List;
 
 public interface CommentRepository extends JpaRepository<Comment, Long>, QuerydslPredicateExecutor<Comment> {
-    List<Comment> findAllByAuthor(User author);
+    List<Comment> findAllByAuthorId(Long author);
 
     interface Predicate {
         static BooleanBuilder textFilter(String text) {

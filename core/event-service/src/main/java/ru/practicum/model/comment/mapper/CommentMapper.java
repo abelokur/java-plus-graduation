@@ -1,31 +1,28 @@
 package ru.practicum.model.comment.mapper;
 
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
 import ru.practicum.dto.comment.CommentDto;
-import ru.practicum.dto.comment.NewCommentDto;
+import ru.practicum.dto.comment.NewCommentRequest;
 import ru.practicum.dto.comment.StateCommentDto;
+import ru.practicum.model.CommentState;
 import ru.practicum.model.comment.Comment;
-import ru.practicum.model.comment.CommentState;
 import ru.practicum.model.event.Event;
-import ru.practicum.model.user.User;
 
-import java.time.LocalDateTime;
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
+public interface CommentMapper {
 
-public class CommentMapper {
-    public static Comment mapToComment(NewCommentDto commentDto, User author, Event event, CommentState state) {
-        return Comment.builder()
-                .author(author)
-                .event(event)
-                .text(commentDto.text())
-                .state(state)
-                .created(LocalDateTime.now())
-                .build();
-    }
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "text", source = "request.text")
+    @Mapping(target = "created", ignore = true)
+    @Mapping(target = "event", source = "event")
+    @Mapping(target = "state", source = "state")
+    Comment toEntity(NewCommentRequest request, Long authorId, Event event, CommentState state);
 
-    public static CommentDto mapToCommentDto(Comment comment) {
-        return new CommentDto(comment.getId(), comment.getAuthor().getName(), comment.getText());
-    }
+    @Mapping(target = "author", source = "authorName")
+    CommentDto toDto(Comment comment, String authorName);
 
-    public static StateCommentDto mapToAdminDto(Comment comment) {
-        return new StateCommentDto(comment.getId(), comment.getAuthor().getName(), comment.getText(), comment.getState());
-    }
+    @Mapping(target = "author", source = "authorName")
+    StateCommentDto toAdminDto(Comment comment, String authorName);
 }

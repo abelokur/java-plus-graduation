@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.annotation.LogAllMethods;
 import ru.practicum.dto.event.*;
 import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.service.event.EventService;
@@ -18,6 +19,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @Validated
+@LogAllMethods
 public class PrivateEventController {
     private final EventService eventService;
     private static final String USER_ID_VALIDATION_MESSAGE = "userId должен быть больше 0";
@@ -34,7 +36,6 @@ public class PrivateEventController {
             @ModelAttribute
             EventPrivateParam params
     ) {
-        log.info("Private: Method launched (findUserEvents({}))", params);
         return eventService.findUserEvents(userId, params);
     }
 
@@ -47,9 +48,8 @@ public class PrivateEventController {
 
             @Valid
             @RequestBody
-            NewEventDto dto
+            NewEventRequest dto
     ) {
-        log.info("Private: Method launched (createEvent({}, {}))", userId, dto);
         return eventService.createEvent(userId, dto);
     }
 
@@ -64,7 +64,6 @@ public class PrivateEventController {
             @Positive(message = EVENT_ID_VALIDATION_MESSAGE)
             Long eventId
     ) {
-        log.info("Private: Method launched (findUserEventById({}, {}))", eventId, userId);
         return eventService.findUserEventById(eventId, userId);
     }
 
@@ -85,7 +84,6 @@ public class PrivateEventController {
     ) {
         UpdateEventUserRequestParam updateEventUserRequestParam =
                 new UpdateEventUserRequestParam(userId, eventId, updateRequest);
-        log.info("Private: Method launched (updateUserEvent({}))", updateEventUserRequestParam);
         return eventService.updateUserEvent(updateEventUserRequestParam);
     }
 
@@ -101,7 +99,6 @@ public class PrivateEventController {
             @Positive(message = EVENT_ID_VALIDATION_MESSAGE)
             Long eventId
     ) {
-        log.info("Private: Method launched (findEventRequests({}, {}))", eventId, userId);
         return eventService.findEventRequests(eventId, userId);
     }
 
@@ -122,7 +119,6 @@ public class PrivateEventController {
     ) {
         EventRequestStatusUpdateRequestParam updateEventRequestParam =
                 new EventRequestStatusUpdateRequestParam(userId, eventId, updateRequest);
-        log.info("Private: Method launched (updateRequestStatus({}))", updateEventRequestParam);
         return eventService.updateRequestStatus(updateEventRequestParam);
     }
 }

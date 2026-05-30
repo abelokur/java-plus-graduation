@@ -4,16 +4,16 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import org.springframework.format.annotation.DateTimeFormat;
-import ru.practicum.model.event.State;
+import ru.practicum.model.EventState;
 
 import java.time.LocalDateTime;
 import java.util.Set;
 
-import static util.DateTimeFormat.DATE_TIME_PATTERN;
+import static ru.practicum.util.DateTimeFormat.DATE_TIME_PATTERN;
 
 public record AdminEventParam(
         Set<Long> users,
-        Set<State> states,
+        Set<EventState> states,
         Set<Long> categories,
 
         @DateTimeFormat(pattern = DATE_TIME_PATTERN)

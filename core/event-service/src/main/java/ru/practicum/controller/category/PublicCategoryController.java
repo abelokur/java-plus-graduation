@@ -4,12 +4,14 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.annotation.LogAllMethods;
 import ru.practicum.dto.category.CategoryDto;
-import ru.practicum.dto.category.CategoryParam;
 import ru.practicum.service.category.CategoryService;
+import ru.practicum.util.OffsetBasedPageable;
 
 import java.util.List;
 
@@ -18,23 +20,23 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @Validated
+@LogAllMethods
 public class PublicCategoryController {
     private final CategoryService categoryService;
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<CategoryDto> getAllCategories(
-            @RequestParam(defaultValue = "0") @PositiveOrZero int from,
-            @RequestParam(defaultValue = "10") @Positive int size
+            @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+            @RequestParam(defaultValue = "10") @Positive Integer size
     ) {
-        log.info("Public: Method launched (findAll(Integer from = {}, Integer size = {}))", from, size);
-        return categoryService.findAll(new CategoryParam(from, size));
+        Pageable pageable = new OffsetBasedPageable(from, size);
+        return categoryService.findAll(pageable);
     }
 
     @GetMapping("/{categoryId}")
     @ResponseStatus(HttpStatus.OK)
     public CategoryDto getCategoryById(@PathVariable Long categoryId) {
-        log.info("Public: Method launched (deleteById(Long categoryId = {}))", categoryId);
         return categoryService.findById(categoryId);
     }
 }

@@ -9,14 +9,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.annotation.LogAllMethods;
 import ru.practicum.client.StatsClient;
 import ru.practicum.dto.HitCreateDto;
 import ru.practicum.dto.comment.CommentDto;
 import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.dto.event.EventPublicParam;
 import ru.practicum.dto.event.EventShortDto;
-import ru.practicum.model.comment.CommentState;
-import ru.practicum.model.comment.DateSort;
+import ru.practicum.model.CommentDateSort;
+import ru.practicum.model.CommentState;
 import ru.practicum.service.comment.CommentService;
 import ru.practicum.service.event.EventService;
 
@@ -28,12 +29,13 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @Validated
+@LogAllMethods
 public class PublicEventController {
     private final EventService eventService;
     private final StatsClient statsClient;
     private final CommentService commentService;
 
-    @Value("${stats.service.name:ewm-main-service}")
+    @Value("${stats.service.name:event-service}")
     private String serviceName;
 
     @GetMapping
@@ -41,7 +43,6 @@ public class PublicEventController {
     public List<EventShortDto> findPublicEvents(
             @Valid @ModelAttribute EventPublicParam params,
             HttpServletRequest request) {
-        log.info("Public: Method launched (findPublicEvents({}))", params);
         List<EventShortDto> events = eventService.findPublicEvents(params);
         if (!events.isEmpty()) {
             saveHit(request);
@@ -57,22 +58,19 @@ public class PublicEventController {
             Long id,
             HttpServletRequest request
     ) {
-        log.info("Public: Method launched (findPublicEventById({}))", id);
         EventFullDto event = eventService.findPublicEventById(id);
         saveHit(request);
         return event;
     }
 
     @GetMapping("/comments")
-    public List<CommentDto> getAllComments(@RequestParam(name = "sort", defaultValue = "ASC") DateSort sort) {
-        log.info("Public: Get All comments, sort={}", sort);
+    public List<CommentDto> getAllComments(@RequestParam(name = "sort", defaultValue = "ASC") CommentDateSort sort) {
         return commentService.getCommentsByState(CommentState.APPROVED, sort);
     }
 
     @GetMapping("/{eventId}/comments")
-    public List<CommentDto> getEventComments(@PathVariable(name = "eventId") long eventId,
-                                             @RequestParam(name = "sort", defaultValue = "ASC") DateSort sort) {
-        log.info("Public: Get event ({}) comments sort={}", eventId, sort);
+    public List<CommentDto> getEventComments(@PathVariable(name = "eventId") Long eventId,
+                                             @RequestParam(name = "sort", defaultValue = "ASC") CommentDateSort sort) {
         return commentService.getCommentsByEvent(eventId, sort);
     }
 
@@ -85,7 +83,6 @@ public class PublicEventController {
                     .timestamp(LocalDateTime.now())
                     .build());
         } catch (Exception e) {
-            log.warn("Failed to save statistics for URI: {}", request.getRequestURI(), e);
             // Не бросаем исключение дальше - статистика не должна ломать основной flow
         }
     }

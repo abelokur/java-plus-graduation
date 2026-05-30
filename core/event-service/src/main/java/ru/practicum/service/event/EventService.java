@@ -8,7 +8,7 @@ import java.util.List;
 public interface EventService {
     List<EventFullDto> findAllAdmin(AdminEventParam params);
 
-    EventFullDto updateAdminEvent(long id, UpdateEventAdminRequest event);
+    EventFullDto updateAdminEvent(Long id, UpdateEventAdminRequest event);
 
     List<EventShortDto> findPublicEvents(EventPublicParam params);
 
@@ -16,7 +16,7 @@ public interface EventService {
 
     List<EventShortDto> findUserEvents(Long userId, EventPrivateParam params);
 
-    EventFullDto createEvent(Long userId, NewEventDto dto);
+    EventFullDto createEvent(Long userId, NewEventRequest dto);
 
     EventFullDto findUserEventById(Long eventId, Long userId);
 
