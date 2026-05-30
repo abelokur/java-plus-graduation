@@ -9,7 +9,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>user-service</artifactId>
+    <artifactId>event-service</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
