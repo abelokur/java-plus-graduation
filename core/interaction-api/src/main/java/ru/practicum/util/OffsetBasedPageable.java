@@ -4,6 +4,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.lang.NonNull;
 
 @ToString
 @EqualsAndHashCode
@@ -45,25 +46,30 @@ public class OffsetBasedPageable implements Pageable {
     }
 
     @Override
+    @NonNull
     public Sort getSort() {
         return sort;
     }
 
     @Override
+    @NonNull
     public Pageable next() {
         return new OffsetBasedPageable(offset + size, size, sort);
     }
 
+    @NonNull
     @Override
     public Pageable previousOrFirst() {
         return hasPrevious() ? previous() : first();
     }
 
+    @NonNull
     @Override
     public Pageable first() {
         return new OffsetBasedPageable(0, size, sort);
     }
 
+    @NonNull
     @Override
     public Pageable withPage(int pageNumber) {
         int newOffset = pageNumber * size;
