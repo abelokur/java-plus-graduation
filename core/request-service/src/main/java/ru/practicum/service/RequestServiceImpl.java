@@ -2,6 +2,8 @@ package ru.practicum.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import ru.practicum.client.EventClient;
@@ -41,6 +43,7 @@ public class RequestServiceImpl implements RequestService {
     private final RequestMapper requestMapper;
 
     @Override
+    @Cacheable(cacheNames = "requests")
     public List<ParticipationRequestDto> getUserRequests(Long userId) {
         UserDto userDto = userClient.getUserById(userId);
 
@@ -50,6 +53,7 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "requests", allEntries = true)
     public ParticipationRequestDto createRequest(Long userId, Long eventId) {
         UserDto userDto = userClient.getUserById(userId);
         EventFullDto event = eventClient.getEventById(eventId);
@@ -67,6 +71,7 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "requests", allEntries = true)
     public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
         UserDto userDto = userClient.getUserById(userId);
         Request request = getRequestById(requestId);
@@ -86,6 +91,7 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
+    @Cacheable(cacheNames = "requests")
     public List<ParticipationRequestDto> findEventRequests(Long eventId, Long userId) {
         EventFullDto event = eventClient.getEventByIdAndInitiatorId(eventId, userId);
 
@@ -104,6 +110,7 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "requests", allEntries = true)
     public EventRequestStatusUpdateResult updateRequestStatus(EventRequestStatusUpdateRequestParam requestParam) {
         EventRequestStatusUpdateResult result =
                 transactionTemplate.execute(status -> updateRequestStatusInternal(requestParam));
@@ -125,6 +132,27 @@ public class RequestServiceImpl implements RequestService {
         return result;
     }
 
+    @Override
+    public Long getConfirmedRequests(Long eventId) {
+        if (eventId == null) {
+            return 0L;
+        }
+        return requestRepository
+                .countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
+    }
+
+    @Override
+    public Map<Long, Long> getConfirmedRequestsForEvents(List<Long> eventIds) {
+        try {
+            return requestRepository.countConfirmedRequestsByEventIds(eventIds).stream()
+                    .collect(Collectors.toMap(
+                            e -> (Long) e[0],
+                            e -> (Long) e[1]
+                    ));
+        } catch (Exception e) {
+            return eventIds.stream().collect(Collectors.toMap(id -> id, id -> 0L));
+        }
+    }
     protected EventRequestStatusUpdateResult updateRequestStatusInternal(EventRequestStatusUpdateRequestParam requestParam) {
         EventRequestStatusUpdateRequest updateRequest = requestParam.updateRequest();
         EventFullDto event = eventClient.getEventByIdAndInitiatorId(requestParam.eventId(), requestParam.userId());
@@ -182,28 +210,6 @@ public class RequestServiceImpl implements RequestService {
                 requestMapper.toDto(confirmedRequests),
                 requestMapper.toDto(rejectedRequests)
         );
-    }
-
-    @Override
-    public Long getConfirmedRequests(Long eventId) {
-        if (eventId == null) {
-            return 0L;
-        }
-        return requestRepository
-                .countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
-    }
-
-    @Override
-    public Map<Long, Long> getConfirmedRequestsForEvents(List<Long> eventIds) {
-        try {
-            return requestRepository.countConfirmedRequestsByEventIds(eventIds).stream()
-                    .collect(Collectors.toMap(
-                            e -> (Long) e[0],
-                            e -> (Long) e[1]
-                    ));
-        } catch (Exception e) {
-            return eventIds.stream().collect(Collectors.toMap(id -> id, id -> 0L));
-        }
     }
 
     private Request getRequestById(Long requestId) {

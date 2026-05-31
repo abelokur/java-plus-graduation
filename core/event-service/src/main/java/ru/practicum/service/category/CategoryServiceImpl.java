@@ -1,6 +1,8 @@
 package ru.practicum.service.category;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "categories", allEntries = true)
     public CategoryDto save(CategoryDto category) {
         Category saveCat;
 
@@ -35,6 +38,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "categories", allEntries = true)
     public void delete(Long id) {
         if (!categoryRepository.existsById(id)) {
             throw new NotFoundException("Категория с id " + id + " не найдена");
@@ -45,6 +49,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "categories", allEntries = true)
     public CategoryDto update(Long id, CategoryDto category) {
         String catDtoName = category.name();
 
@@ -63,11 +68,13 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Cacheable(cacheNames = "categories")
     public CategoryDto findById(Long id) {
         return categoryMapper.toDto(getCategory(id));
     }
 
     @Override
+    @Cacheable(cacheNames = "categories")
     public List<CategoryDto> findAll(Pageable pageable) {
         List<Category> categories = categoryRepository.findAll(pageable).toList();
         return categoryMapper.toDto(categories);

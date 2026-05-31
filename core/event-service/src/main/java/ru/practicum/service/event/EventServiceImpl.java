@@ -204,6 +204,19 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toFullDto(event, getUser(initiatorId));
     }
 
+    @Override
+    @Transactional
+    public void updateConfirmedRequests(Map<Long, Long> eventConfirmedRequests) {
+        List<Event> events = eventRepository.findAllById(eventConfirmedRequests.keySet());
+        events.forEach(event -> {
+            Long confirmedCount = eventConfirmedRequests.get(event.getId());
+            if (confirmedCount != null) {
+                event.setConfirmedRequests(confirmedCount);
+            }
+        });
+        eventRepository.saveAll(events);
+    }
+
     private Map<Long, Long> getViewsForEvents(List<Long> eventIds) {
         if (eventIds.isEmpty()) {
             return Collections.emptyMap();
@@ -253,18 +266,6 @@ public class EventServiceImpl implements EventService {
         );
     }
 
-    @Override
-    @Transactional
-    public void updateConfirmedRequests(Map<Long, Long> eventConfirmedRequests) {
-        List<Event> events = eventRepository.findAllById(eventConfirmedRequests.keySet());
-        events.forEach(event -> {
-            Long confirmedCount = eventConfirmedRequests.get(event.getId());
-            if (confirmedCount != null) {
-                event.setConfirmedRequests(confirmedCount);
-            }
-        });
-        eventRepository.saveAll(events);
-    }
     private void setViewsAndConfirmedRequests(Event event) {
         setViews(event);
         setConfirmedRequests(event);
@@ -274,8 +275,12 @@ public class EventServiceImpl implements EventService {
         event.setViews(getViews(event.getId()));
     }
 
-    private void setViews(List<Event> event) {
-        event.forEach(this::setViews);
+    private void setViews(List<Event> events) {
+        List<Long> eventIds = events.stream()
+                .map(Event::getId)
+                .toList();
+        Map<Long, Long> views = getViewsForEvents(eventIds);
+        events.forEach(event -> event.setViews(views.get(event.getId())));
     }
 
     private void setConfirmedRequests(Event event) {

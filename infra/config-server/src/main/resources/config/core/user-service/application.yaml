@@ -13,6 +13,10 @@ spring:
     driver-class-name: org.postgresql.Driver
     username: postgres
     password: postgres
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=500,expireAfterAccess=2m
 
 logging:
   level:

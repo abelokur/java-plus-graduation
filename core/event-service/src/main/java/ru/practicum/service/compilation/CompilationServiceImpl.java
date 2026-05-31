@@ -1,6 +1,8 @@
 package ru.practicum.service.compilation;
 
 import lombok.AllArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +44,7 @@ public class CompilationServiceImpl implements CompilationService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "compilations", allEntries = true)
     public CompilationDto createCompilation(NewCompilationRequest compilationDto) {
         Set<Event> events = getEvents(compilationDto.eventIds());
 
@@ -56,6 +59,7 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "compilations", allEntries = true)
     public void deleteCompilation(Long compilationId) {
         Compilation compilation = getCompilationById(compilationId);
         compilationRepository.delete(compilation);
@@ -63,6 +67,7 @@ public class CompilationServiceImpl implements CompilationService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "compilations", allEntries = true)
     public CompilationDto updateCompilation(Long compilationId, UpdateCompilationRequest compilationDto) {
         Compilation oldCompilation = getCompilationById(compilationId);
 
@@ -84,6 +89,7 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     @Override
+    @Cacheable(cacheNames = "compilations")
     public List<CompilationDto> findCompilationsByParam(Boolean pinned, Pageable pageable) {
 
         final List<Compilation> compilationList = compilationRepository.findAll(CompilationRepository.Predicates.buildPredicates(pinned), pageable).toList();

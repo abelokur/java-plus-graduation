@@ -21,6 +21,10 @@ spring:
           enabled: true                          # Включить группировку Circuit Breaker по имени Feign клиента
         alphanumeric-ids:
           enabled: true                          # Генерировать имена Circuit Breaker без специальных символов
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=500,expireAfterAccess=2m
 
 resilience4j:
   circuitbreaker:

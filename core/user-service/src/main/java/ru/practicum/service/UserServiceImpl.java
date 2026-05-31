@@ -1,6 +1,8 @@
 package ru.practicum.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -28,12 +30,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "users", allEntries = true)
     public UserDto save(NewUserRequest user) {
         User savedUser = userRepository.save(userMapper.toEntity(user));
         return userMapper.toDto(savedUser);
     }
 
     @Override
+    @Cacheable(cacheNames = "users")
     public List<UserDto> findAll(UserParam userParam) {
         Pageable pageable = new OffsetBasedPageable(
                 userParam.from(),
@@ -53,6 +57,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "users", allEntries = true)
     public void deleteById(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException("Нет такого пользователя id = " + userId);
@@ -61,6 +66,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(cacheNames = "users")
     public UserDto getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Нет такого пользователя id = " + id));
@@ -68,6 +74,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(cacheNames = "users")
     public Set<UserDto> getUsersByIds(Set<Long> ids) {
         Set<User> users = userRepository.findByIdIn(ids);
         if (users.isEmpty()) {

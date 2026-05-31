@@ -1,6 +1,8 @@
 package ru.practicum.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentMapper commentMapper;
 
     @Override
+    @Cacheable(cacheNames = "comments")
     public List<CommentDto> getComments(Long userId) {
         UserDto userDto = userClient.getUserById(userId);
 
@@ -51,6 +54,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "comments", allEntries = true)
     public CommentDto createComment(Long userId, NewCommentRequest request) {
         UserDto userDto = userClient.getUserById(userId);
 
@@ -64,6 +68,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "comments", allEntries = true)
     public CommentDto updateComment(Long userId, UpdateCommentRequest commentDto) {
         UserDto userDto = userClient.getUserById(userId);
 
@@ -80,6 +85,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "comments", allEntries = true)
     public void deleteComment(Long userId, Long comId) {
         Comment comment = commentRepository.findById(comId)
                 .orElseThrow(() -> new NotFoundException("Комментария с id " + comId + " не найдено"));
@@ -92,6 +98,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Cacheable(cacheNames = "comments")
     public List<StateCommentDto> getComments(String text, CommentDateSort sort) {
         Iterable<Comment> commentsIterable = commentRepository
                 .findAll(CommentRepository.Predicate.textFilter(text), getSortDate(sort));
@@ -112,6 +119,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "comments", allEntries = true)
     public StateCommentDto reviewComment(Long comId, boolean approved) {
         Comment comment = commentRepository.findById(comId)
                 .orElseThrow(() -> new NotFoundException("Комментария с id " + comId + " не найдено"));
@@ -133,6 +141,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "comments", allEntries = true)
     public void deleteComment(Long comId) {
         Comment comment = commentRepository.findById(comId)
                 .orElseThrow(() -> new NotFoundException("Комментария с id " + comId + " не найдено"));
@@ -140,6 +149,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Cacheable(cacheNames = "comments")
     public List<CommentDto> getCommentsByState(CommentState state, CommentDateSort sort) {
         Iterable<Comment> commentsIterable = commentRepository.findAll(CommentRepository.Predicate.stateFilter(state), getSortDate(sort));
 
@@ -158,6 +168,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Cacheable(cacheNames = "comments")
     public List<CommentDto> getCommentsByEvent(Long eventId, CommentDateSort sort) {
         Iterable<Comment> commentsIterable = commentRepository
                 .findAll(CommentRepository.Predicate.eventFilter(eventId), getSortDate(sort));
