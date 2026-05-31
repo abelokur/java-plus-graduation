@@ -5,7 +5,8 @@ import ru.practicum.client.RequestClient;
 
 @FeignClient(
         name = "request-service",
-        path = "/client/requests"
+        path = "/client/requests",
+        fallbackFactory = RequestFeignClientFallbackFactory.class
 )
 public interface RequestFeignClient extends RequestClient {
 }
