@@ -12,13 +12,9 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
 import ru.practicum.client.StatsClient;
 import ru.practicum.dto.HitCreateDto;
-import ru.practicum.dto.comment.CommentDto;
 import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.dto.event.EventPublicParam;
 import ru.practicum.dto.event.EventShortDto;
-import ru.practicum.model.CommentDateSort;
-import ru.practicum.model.CommentState;
-import ru.practicum.service.comment.CommentService;
 import ru.practicum.service.event.EventService;
 
 import java.time.LocalDateTime;
@@ -33,7 +29,6 @@ import java.util.List;
 public class PublicEventController {
     private final EventService eventService;
     private final StatsClient statsClient;
-    private final CommentService commentService;
 
     @Value("${stats.service.name:event-service}")
     private String serviceName;
@@ -61,17 +56,6 @@ public class PublicEventController {
         EventFullDto event = eventService.findPublicEventById(id);
         saveHit(request);
         return event;
-    }
-
-    @GetMapping("/comments")
-    public List<CommentDto> getAllComments(@RequestParam(name = "sort", defaultValue = "ASC") CommentDateSort sort) {
-        return commentService.getCommentsByState(CommentState.APPROVED, sort);
-    }
-
-    @GetMapping("/{eventId}/comments")
-    public List<CommentDto> getEventComments(@PathVariable(name = "eventId") Long eventId,
-                                             @RequestParam(name = "sort", defaultValue = "ASC") CommentDateSort sort) {
-        return commentService.getCommentsByEvent(eventId, sort);
     }
 
     private void saveHit(HttpServletRequest request) {
