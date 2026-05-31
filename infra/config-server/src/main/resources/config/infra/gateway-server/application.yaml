@@ -22,13 +22,22 @@ spring:
             - id: user_service_route
               uri: lb://user-service
               predicates:
-                - Path=/admin/users/** # перенаправляем запросы на /admin/users/** на user-service
+                - Path=/admin/users/**
+
+            - id: comment_service_route
+              uri: lb://comment-service
+              predicates:
+                - Path=/admin/comments/**, /users/{userId}/comments/**, /events/comments, /events/{eventId}/comments
+
+            - id: request_service_route
+              uri: lb://request-service
+              predicates:
+                - Path=/admin/requests/**, /users/{userId}/requests/**, /users/{userId}/events/{eventId}/requests/**
 
             - id: event_service_route
               uri: lb://event-service
               predicates:
-                - Path=/** # перенаправляем все запросы на event-service
-
+                - Path=/admin/events/**, /events/**, /users/{userId}/events/**, /admin/categories/**, /categories/**, /admin/compilations/**, /compilations/**
 
 management:
   endpoints:

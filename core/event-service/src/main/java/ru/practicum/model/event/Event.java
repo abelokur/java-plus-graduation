@@ -67,6 +67,6 @@ public class Event {
     @Transient
     private Long views;
 
-    @Transient
+    @Column(name = "confirmed_requests")
     private Long confirmedRequests;
 }

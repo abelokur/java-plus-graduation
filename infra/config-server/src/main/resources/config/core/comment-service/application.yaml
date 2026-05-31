@@ -13,6 +13,27 @@ spring:
     driver-class-name: org.postgresql.Driver
     username: postgres
     password: postgres
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true                            # Включить интеграцию Circuit Breaker с Feign клиентами
+        group:
+          enabled: true                          # Включить группировку Circuit Breaker по имени Feign клиента
+        alphanumeric-ids:
+          enabled: true                          # Генерировать имена Circuit Breaker без специальных символов
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10                     # Количество вызовов в скользящем окне для расчета статистики
+        minimumNumberOfCalls: 5                   # Минимальное количество вызовов перед оценкой состояния Circuit Breaker
+        failureRateThreshold: 50                  # Пороговое значение процента ошибок для перехода в состояние OPEN
+        waitDurationInOpenState: 5s               # Время ожидания в состоянии OPEN перед переходом в HALF_OPEN
+        permittedNumberOfCallsInHalfOpenState: 3  # Количество разрешенных тестовых вызовов в состоянии HALF_OPEN
+        ignoreExceptions:
+          - "ru.practicum.exception.ResourceNotFoundException"      # Игнорировать исключения 404 Not Found в статистике Circuit Breaker
+          - "ru.practicum.exception.BadRequestException"           # Игнорировать исключения 4xx Client Error в статистике Circuit Breaker
 
 logging:
   level:
@@ -21,6 +42,12 @@ logging:
       transaction: INFO
       transaction.interceptor: TRACE
       orm.jpa.JpaTransactionManager: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,circuitbreakers,configprops,loggers,retries  # Список эндпоинтов Actuator для экспозиции через веб
 
 stats:
   service:

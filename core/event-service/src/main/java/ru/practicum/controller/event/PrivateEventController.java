@@ -9,7 +9,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
 import ru.practicum.dto.event.*;
-import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.service.event.EventService;
 
 import java.util.List;
@@ -85,40 +84,5 @@ public class PrivateEventController {
         UpdateEventUserRequestParam updateEventUserRequestParam =
                 new UpdateEventUserRequestParam(userId, eventId, updateRequest);
         return eventService.updateUserEvent(updateEventUserRequestParam);
-    }
-
-
-    @GetMapping("/{eventId}/requests")
-    @ResponseStatus(HttpStatus.OK)
-    public List<ParticipationRequestDto> findEventRequests(
-            @PathVariable
-            @Positive(message = USER_ID_VALIDATION_MESSAGE)
-            Long userId,
-
-            @PathVariable
-            @Positive(message = EVENT_ID_VALIDATION_MESSAGE)
-            Long eventId
-    ) {
-        return eventService.findEventRequests(eventId, userId);
-    }
-
-    @PatchMapping("/{eventId}/requests")
-    @ResponseStatus(HttpStatus.OK)
-    public EventRequestStatusUpdateResult updateRequestStatus(
-            @PathVariable
-            @Positive(message = USER_ID_VALIDATION_MESSAGE)
-            Long userId,
-
-            @PathVariable
-            @Positive(message = EVENT_ID_VALIDATION_MESSAGE)
-            Long eventId,
-
-            @Valid
-            @RequestBody
-            EventRequestStatusUpdateRequest updateRequest
-    ) {
-        EventRequestStatusUpdateRequestParam updateEventRequestParam =
-                new EventRequestStatusUpdateRequestParam(userId, eventId, updateRequest);
-        return eventService.updateRequestStatus(updateEventRequestParam);
     }
 }

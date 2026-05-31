@@ -47,7 +47,7 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
             addPaidPredicate(predicate, params.paid());
             addCategoriesPredicate(predicate, params.categories());
             addDatePredicate(predicate, params.rangeStart(), params.rangeEnd());
-            addOnlyAvailablePredicate(predicate, params.onlyAvailable(), availableIds);
+            addOnlyAvailablePredicate(predicate, params.onlyAvailable());
 
             return predicate;
         }
@@ -150,11 +150,10 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
          */
         private static void addOnlyAvailablePredicate(
                 BooleanBuilder predicate,
-                Boolean onlyAvailable,
-                List<Long> availableIds
+                Boolean onlyAvailable
         ) {
-            if (onlyAvailable != null && onlyAvailable && availableIds != null && !availableIds.isEmpty()) {
-                predicate.and(QEvent.event.id.in(availableIds));
+            if (onlyAvailable != null && onlyAvailable) {
+                predicate.and(QEvent.event.participantLimit.gt(QEvent.event.confirmedRequests));
             }
         }
 
@@ -165,13 +164,4 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
     Optional<Event> findByIdAndInitiatorId(Long eventId, Long userId);
 
     List<Event> findAllByInitiatorId(Long userId, Pageable pageable);
-
-    @Query("""
-            SELECT e.id
-            FROM Event e
-            LEFT JOIN Request r ON r.event.id = e.id AND r.status = 'CONFIRMED'
-            GROUP BY e.id, e.participantLimit
-            HAVING e.participantLimit = 0 OR COUNT(r) < e.participantLimit
-            """)
-    List<Long> findEventIdsWithAvailableSlots();
 }

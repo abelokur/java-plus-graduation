@@ -58,4 +58,18 @@ public record EventFullDto(
     @Builder(toBuilder = true)
     public EventFullDto {
     }
+
+    public EventShortDto toShortDto() {
+        return EventShortDto.builder()
+                .id(this.id())
+                .annotation(this.annotation())
+                .category(this.category())
+                .confirmedRequests(this.confirmedRequests())
+                .eventDate(this.eventDate())
+                .initiator(this.initiator())
+                .paid(this.paid())
+                .title(this.title())
+                .views(this.views())
+                .build();
+    }
 }

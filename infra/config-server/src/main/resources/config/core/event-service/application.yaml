@@ -43,6 +43,12 @@ logging:
       transaction.interceptor: TRACE
       orm.jpa.JpaTransactionManager: DEBUG
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,circuitbreakers,configprops,loggers,retries  # Список эндпоинтов Actuator для экспозиции через веб
+
 stats:
   service:
     name: "event-service"
