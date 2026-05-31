@@ -1,9 +1,9 @@
 package ru.practicum.service;
 
-import ru.practicum.dto.comment.CommentDto;
 import ru.practicum.dto.NewCommentRequest;
-import ru.practicum.dto.comment.StateCommentDto;
 import ru.practicum.dto.UpdateCommentRequest;
+import ru.practicum.dto.comment.CommentDto;
+import ru.practicum.dto.comment.StateCommentDto;
 import ru.practicum.model.CommentDateSort;
 import ru.practicum.model.CommentState;
 

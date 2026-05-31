@@ -3,11 +3,11 @@ package ru.practicum.model.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
-import ru.practicum.dto.comment.CommentDto;
 import ru.practicum.dto.NewCommentRequest;
+import ru.practicum.dto.comment.CommentDto;
 import ru.practicum.dto.comment.StateCommentDto;
-import ru.practicum.model.CommentState;
 import ru.practicum.model.Comment;
+import ru.practicum.model.CommentState;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface CommentMapper {

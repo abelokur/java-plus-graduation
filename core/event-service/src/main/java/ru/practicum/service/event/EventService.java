@@ -3,6 +3,7 @@ package ru.practicum.service.event;
 import ru.practicum.dto.event.*;
 
 import java.util.List;
+import java.util.Map;
 
 public interface EventService {
     List<EventFullDto> findAllAdmin(AdminEventParam params);
@@ -24,4 +25,6 @@ public interface EventService {
     EventFullDto findById(Long eventId);
 
     EventFullDto findByIdAndInitiatorId(Long eventId, Long initiatorId);
+
+    void updateConfirmedRequests(Map<Long, Long> eventConfirmedRequests);
 }

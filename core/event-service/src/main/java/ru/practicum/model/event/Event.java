@@ -60,7 +60,7 @@ public class Event {
     @Column(name = "published_on")
     private LocalDateTime publishedOn;
 
-    @Column(name = "created_on", nullable = false)
+    @Column(name = "created_on", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdOn = LocalDateTime.now();
 

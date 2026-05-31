@@ -8,9 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
-import ru.practicum.dto.comment.CommentDto;
 import ru.practicum.dto.NewCommentRequest;
 import ru.practicum.dto.UpdateCommentRequest;
+import ru.practicum.dto.comment.CommentDto;
 import ru.practicum.service.CommentService;
 
 import java.util.List;

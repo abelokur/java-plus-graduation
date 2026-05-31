@@ -31,7 +31,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class EventServiceImpl implements EventService {
     private static final Long MIN_HOURS_BEFORE_PUBLICATION_FOR_ADMIN = 1L;
@@ -57,7 +56,7 @@ public class EventServiceImpl implements EventService {
                 .findAll(EventRepository.Predicate.adminFilters(params), pageable)
                 .getContent();
 
-        setViewsAndConfirmedRequests(events);
+        setViews(events); // устанавливаем только количество просмотров, количество подтвержденных запросов берем из БД
 
         Set<Long> initiatorIds = events.stream()
                 .map(Event::getInitiatorId)
@@ -78,7 +77,7 @@ public class EventServiceImpl implements EventService {
 
         updateEvent(event, updateRequest);
 
-        setViewsAndConfirmedRequests(event);
+        setViewsAndConfirmedRequests(event); // обновляем так же количество подтвержденных запросов
 
         return eventMapper.toFullDto(event, getUser(event.getInitiatorId()));
     }
@@ -101,7 +100,7 @@ public class EventServiceImpl implements EventService {
 
         Map<Long, UserShortDto> initiators = getUsers(initiatorIds);
 
-        setViewsAndConfirmedRequests(events);
+        setViews(events); // устанавливаем только количество просмотров, количество подтвержденных запросов берем из БД
 
         Comparator<EventShortDto> comparator = createEventShortDtoComparator(params.sort());
 
@@ -118,7 +117,7 @@ public class EventServiceImpl implements EventService {
                         () -> new NotFoundException(String.format("Event with id %d not found", eventId))
                 );
 
-        setViewsAndConfirmedRequests(event);
+        setViews(event); // устанавливаем только количество просмотров, количество подтвержденных запросов берем из БД
 
         return eventMapper.toFullDto(event, getUser(event.getInitiatorId()));
     }
@@ -134,7 +133,7 @@ public class EventServiceImpl implements EventService {
         Pageable pageable = new OffsetBasedPageable(from, size, defaultSort);
         List<Event> events = eventRepository.findAllByInitiatorId(userId, pageable);
 
-        setViewsAndConfirmedRequests(events);
+        setViews(events); // устанавливаем только количество просмотров, количество подтвержденных запросов берем из БД
 
         return events.stream()
                 .map(event -> eventMapper.toShortDto(event, initiator))
@@ -160,7 +159,7 @@ public class EventServiceImpl implements EventService {
                 () -> new NotFoundException(String.format("Event with id %d by user %d not found", eventId, userId))
         );
 
-        setViewsAndConfirmedRequests(event);
+        setViews(event);
 
         return eventMapper.toFullDto(event, getUser(userId));
     }
@@ -180,7 +179,7 @@ public class EventServiceImpl implements EventService {
 
         updateEvent(event, updateRequest);
 
-        setViewsAndConfirmedRequests(event);
+        setViewsAndConfirmedRequests(event); // обновляем так же количество подтвержденных запросов
 
         return eventMapper.toFullDto(event, getUser(event.getInitiatorId()));
     }
@@ -254,31 +253,29 @@ public class EventServiceImpl implements EventService {
         );
     }
 
+    @Override
+    @Transactional
+    public void updateConfirmedRequests(Map<Long, Long> eventConfirmedRequests) {
+        List<Event> events = eventRepository.findAllById(eventConfirmedRequests.keySet());
+        events.forEach(event -> {
+            Long confirmedCount = eventConfirmedRequests.get(event.getId());
+            if (confirmedCount != null) {
+                event.setConfirmedRequests(confirmedCount);
+            }
+        });
+        eventRepository.saveAll(events);
+    }
     private void setViewsAndConfirmedRequests(Event event) {
         setViews(event);
         setConfirmedRequests(event);
     }
 
-    private void setViewsAndConfirmedRequests(List<Event> events) {
-        if (events == null || events.isEmpty()) {
-            return;
-        }
-
-        List<Long> eventIds = events.stream()
-                .map(Event::getId)
-                .collect(Collectors.toList());
-
-        Map<Long, Long> viewsMap = getViewsForEvents(eventIds);
-        Map<Long, Long> confirmedRequestsMap = requestClient.getConfirmedRequestsForEvents(eventIds);
-
-        events.forEach(event -> {
-            event.setViews(viewsMap.getOrDefault(event.getId(), 0L));
-            event.setConfirmedRequests(confirmedRequestsMap.getOrDefault(event.getId(), 0L));
-        });
-    }
-
     private void setViews(Event event) {
         event.setViews(getViews(event.getId()));
+    }
+
+    private void setViews(List<Event> event) {
+        event.forEach(this::setViews);
     }
 
     private void setConfirmedRequests(Event event) {

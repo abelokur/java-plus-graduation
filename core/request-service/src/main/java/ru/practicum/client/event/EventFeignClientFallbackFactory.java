@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.exception.ServiceTemporaryUnavailableException;
 
+import java.util.Map;
+
 import static ru.practicum.util.FallBackUtility.fastFallBack;
 
 @Component
@@ -25,6 +27,11 @@ public class EventFeignClientFallbackFactory implements FallbackFactory<EventFei
             public EventFullDto getEventByIdAndInitiatorId(Long eventId, Long initiatorId) {
                 fastFallBack(cause);
                 throw new ServiceTemporaryUnavailableException(cause.getMessage());
+            }
+
+            @Override
+            public void updateEventsConfirmedRequests(Map<Long, Long> confirmedRequests) {
+                fastFallBack(cause);
             }
         };
 

@@ -1,8 +1,9 @@
 package ru.practicum.service;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import ru.practicum.client.EventClient;
 import ru.practicum.client.UserClient;
 import ru.practicum.dto.EventRequestStatusUpdateRequest;
@@ -29,7 +30,9 @@ import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class RequestServiceImpl implements RequestService {
+    private final TransactionTemplate transactionTemplate;
     private final UserClient userClient;
     private final EventClient eventClient;
 
@@ -100,9 +103,29 @@ public class RequestServiceImpl implements RequestService {
         return requestMapper.toDto(requests);
     }
 
-    @Transactional
     @Override
     public EventRequestStatusUpdateResult updateRequestStatus(EventRequestStatusUpdateRequestParam requestParam) {
+        EventRequestStatusUpdateResult result =
+                transactionTemplate.execute(status -> updateRequestStatusInternal(requestParam));
+
+        if (result != null) {
+            List<Long> eventIdsToUpdate = result.confirmedRequests().stream()
+                    .map(ParticipationRequestDto::eventId)
+                    .toList();
+
+            Map<Long, Long> confirmedRequests = getConfirmedRequestsForEvents(eventIdsToUpdate);
+
+            try {
+                eventClient.updateEventsConfirmedRequests(confirmedRequests);
+            } catch (Exception e) {
+                log.error("Ошибка обновления количества подтвержденных заявок для событий", e);
+            }
+        }
+
+        return result;
+    }
+
+    protected EventRequestStatusUpdateResult updateRequestStatusInternal(EventRequestStatusUpdateRequestParam requestParam) {
         EventRequestStatusUpdateRequest updateRequest = requestParam.updateRequest();
         EventFullDto event = eventClient.getEventByIdAndInitiatorId(requestParam.eventId(), requestParam.userId());
 

@@ -3,12 +3,10 @@ package ru.practicum.client.event;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;
-import ru.practicum.client.user.UserFeignClient;
 import ru.practicum.dto.event.EventFullDto;
-import ru.practicum.dto.user.UserDto;
 import ru.practicum.exception.ServiceTemporaryUnavailableException;
 
-import java.util.Set;
+import java.util.Map;
 
 import static ru.practicum.util.FallBackUtility.fastFallBack;
 
@@ -29,6 +27,11 @@ public class EventFeignClientFallbackFactory implements FallbackFactory<EventFei
             public EventFullDto getEventByIdAndInitiatorId(Long eventId, Long initiatorId) {
                 fastFallBack(cause);
                 throw new ServiceTemporaryUnavailableException(cause.getMessage());
+            }
+
+            @Override
+            public void updateEventsConfirmedRequests(Map<Long, Long> confirmedRequests) {
+                fastFallBack(cause);
             }
         };
 

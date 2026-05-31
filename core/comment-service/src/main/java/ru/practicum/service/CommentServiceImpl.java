@@ -30,7 +30,6 @@ import java.util.stream.StreamSupport;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class CommentServiceImpl implements CommentService {
     private final UserClient userClient;
     private final EventClient eventClient;

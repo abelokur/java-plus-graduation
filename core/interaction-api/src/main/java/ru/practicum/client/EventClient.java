@@ -1,9 +1,9 @@
 package ru.practicum.client;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.event.EventFullDto;
+
+import java.util.Map;
 
 public interface EventClient {
     @GetMapping("/{id}")
@@ -13,4 +13,7 @@ public interface EventClient {
     EventFullDto getEventByIdAndInitiatorId(
             @RequestParam Long eventId,
             @RequestParam Long initiatorId);
+
+    @PutMapping("/confirmed-requests")
+    void updateEventsConfirmedRequests(@RequestBody Map<Long, Long> confirmedRequests);
 }

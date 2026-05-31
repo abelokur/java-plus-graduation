@@ -28,6 +28,6 @@ public class Request {
     @Column(name = "status", nullable = false)
     private RequestStatus status;
 
-    @Column(name = "created_on", nullable = false)
+    @Column(name = "created_on", nullable = false, updatable = false)
     private LocalDateTime createdOn;
 }

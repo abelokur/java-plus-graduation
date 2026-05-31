@@ -31,7 +31,7 @@ public class Comment {
     @Column(name = "state", nullable = false)
     private CommentState state;
 
-    @Column(name = "created_on")
+    @Column(name = "created_on", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime created = LocalDateTime.now();
 }

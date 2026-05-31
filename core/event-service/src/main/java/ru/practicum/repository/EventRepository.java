@@ -3,7 +3,6 @@ package ru.practicum.repository;
 import com.querydsl.core.BooleanBuilder;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import ru.practicum.dto.event.AdminEventParam;
 import ru.practicum.dto.event.EventPublicParam;
@@ -36,10 +35,6 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
          * Фильтры для общедоступного поиска событий
          */
         static BooleanBuilder publicFilters(EventPublicParam params) {
-            return publicFilters(params, null);
-        }
-
-        static BooleanBuilder publicFilters(EventPublicParam params, List<Long> availableIds) {
             BooleanBuilder predicate = new BooleanBuilder();
 
             addStatePredicate(predicate, EventState.PUBLISHED);
@@ -95,7 +90,7 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
                 BooleanBuilder predicate,
                 String text
         ) {
-            if (text != null && !text.isBlank()) {
+            if (text != null && !text.trim().isBlank()) {
                 String pattern = "%" + text.toLowerCase() + "%";
                 predicate.and(QEvent.event.annotation.lower().like(pattern)
                         .or(QEvent.event.description.lower().like(pattern)));
@@ -153,10 +148,11 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
                 Boolean onlyAvailable
         ) {
             if (onlyAvailable != null && onlyAvailable) {
-                predicate.and(QEvent.event.participantLimit.gt(QEvent.event.confirmedRequests));
+                predicate.and(
+                        QEvent.event.participantLimit.eq(0)
+                        .or(QEvent.event.participantLimit.gt(QEvent.event.confirmedRequests)));
             }
         }
-
     }
 
     Optional<Event> findByIdAndState(Long eventId, EventState state);
