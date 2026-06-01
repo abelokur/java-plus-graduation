@@ -1,6 +1,7 @@
 package ru.practicum.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
 import ru.practicum.client.RequestClient;
@@ -18,14 +19,16 @@ public class ClientRequestController implements RequestClient {
 
     @Override
     @GetMapping("/{eventId}")
-    public Long getConfirmedRequests(@PathVariable Long eventId) {
-        return requestService.getConfirmedRequests(eventId);
+    public ResponseEntity<Long> getConfirmedRequests(@PathVariable Long eventId) {
+        Long confirmedRequests = requestService.getConfirmedRequests(eventId);
+        return ResponseEntity.ok(confirmedRequests);
     }
 
     @Override
     @GetMapping
-    public Map<Long, Long> getConfirmedRequestsForEvents(
+    public ResponseEntity<Map<Long, Long>> getConfirmedRequestsForEvents(
             @RequestParam List<Long> eventIds) {
-        return requestService.getConfirmedRequestsForEvents(eventIds);
+        Map<Long, Long> confirmedRequests = requestService.getConfirmedRequestsForEvents(eventIds);
+        return ResponseEntity.ok(confirmedRequests);
     }
 }

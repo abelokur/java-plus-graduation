@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
@@ -25,27 +26,29 @@ public class PrivateCommentController {
     private final CommentService commentService;
 
     @GetMapping
-    public List<CommentDto> getComments(@PathVariable @Positive Long userId) {
-        return commentService.getComments(userId);
+    public ResponseEntity<List<CommentDto>> getComments(@PathVariable @Positive Long userId) {
+        List<CommentDto> comments = commentService.getComments(userId);
+        return ResponseEntity.ok(comments);
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public CommentDto createComment(@PathVariable @Positive Long userId,
-                                    @RequestBody @Valid NewCommentRequest commentDto) {
-        return commentService.createComment(userId, commentDto);
+    public ResponseEntity<CommentDto> createComment(@PathVariable @Positive Long userId,
+                                                    @RequestBody @Valid NewCommentRequest commentDto) {
+        CommentDto created = commentService.createComment(userId, commentDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PatchMapping
-    public CommentDto updateComment(@PathVariable @Positive Long userId,
-                                    @RequestBody @Valid UpdateCommentRequest commentDto) {
-        return commentService.updateComment(userId, commentDto);
+    public ResponseEntity<CommentDto> updateComment(@PathVariable @Positive Long userId,
+                                                    @RequestBody @Valid UpdateCommentRequest commentDto) {
+        CommentDto updated = commentService.updateComment(userId, commentDto);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{comId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteComment(@PathVariable @Positive Long userId,
-                              @PathVariable @Positive Long comId) {
+    public ResponseEntity<Void> deleteComment(@PathVariable @Positive Long userId,
+                                              @PathVariable @Positive Long comId) {
         commentService.deleteComment(userId, comId);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,6 +1,7 @@
 package ru.practicum.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
 import ru.practicum.client.UserClient;
@@ -18,13 +19,15 @@ public class UserClientController implements UserClient {
 
     @Override
     @GetMapping("/{id}")
-    public UserDto getUserById(@PathVariable Long id) {
-        return userService.getUserById(id);
+    public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
+        UserDto user = userService.getUserById(id);
+        return ResponseEntity.ok(user);
     }
 
     @Override
     @GetMapping
-    public Set<UserDto> getUsersByIds(@RequestParam Set<Long> ids) {
-        return userService.getUsersByIds(ids);
+    public ResponseEntity<Set<UserDto>> getUsersByIds(@RequestParam Set<Long> ids) {
+        Set<UserDto> users = userService.getUsersByIds(ids);
+        return ResponseEntity.ok(users);
     }
 }

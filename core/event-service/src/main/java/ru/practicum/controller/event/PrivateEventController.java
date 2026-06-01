@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
@@ -25,8 +26,7 @@ public class PrivateEventController {
     private static final String EVENT_ID_VALIDATION_MESSAGE = "eventId должен быть больше 0";
 
     @GetMapping
-    @ResponseStatus(HttpStatus.OK)
-    public List<EventShortDto> findUserEvents(
+    public ResponseEntity<List<EventShortDto>> findUserEvents(
             @PathVariable
             @Positive(message = USER_ID_VALIDATION_MESSAGE)
             Long userId,
@@ -35,12 +35,12 @@ public class PrivateEventController {
             @ModelAttribute
             EventPrivateParam params
     ) {
-        return eventService.findUserEvents(userId, params);
+        List<EventShortDto> events = eventService.findUserEvents(userId, params);
+        return ResponseEntity.ok(events);
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public EventFullDto createEvent(
+    public ResponseEntity<EventFullDto> createEvent(
             @PathVariable
             @Positive(message = USER_ID_VALIDATION_MESSAGE)
             Long userId,
@@ -49,12 +49,12 @@ public class PrivateEventController {
             @RequestBody
             NewEventRequest dto
     ) {
-        return eventService.createEvent(userId, dto);
+        EventFullDto createdEvent = eventService.createEvent(userId, dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
     }
 
     @GetMapping("/{eventId}")
-    @ResponseStatus(HttpStatus.OK)
-    public EventFullDto findUserEventById(
+    public ResponseEntity<EventFullDto> findUserEventById(
             @PathVariable
             @Positive(message = USER_ID_VALIDATION_MESSAGE)
             Long userId,
@@ -63,12 +63,12 @@ public class PrivateEventController {
             @Positive(message = EVENT_ID_VALIDATION_MESSAGE)
             Long eventId
     ) {
-        return eventService.findUserEventById(eventId, userId);
+        EventFullDto event = eventService.findUserEventById(eventId, userId);
+        return ResponseEntity.ok(event);
     }
 
     @PatchMapping("/{eventId}")
-    @ResponseStatus(HttpStatus.OK)
-    public EventFullDto updateUserEvent(
+    public ResponseEntity<EventFullDto> updateUserEvent(
             @PathVariable
             @Positive(message = USER_ID_VALIDATION_MESSAGE)
             Long userId,
@@ -83,6 +83,7 @@ public class PrivateEventController {
     ) {
         UpdateEventUserRequestParam updateEventUserRequestParam =
                 new UpdateEventUserRequestParam(userId, eventId, updateRequest);
-        return eventService.updateUserEvent(updateEventUserRequestParam);
+        EventFullDto updatedEvent = eventService.updateUserEvent(updateEventUserRequestParam);
+        return ResponseEntity.ok(updatedEvent);
     }
 }

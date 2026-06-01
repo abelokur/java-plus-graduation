@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
@@ -27,9 +27,9 @@ public class PrivateEventRequestController {
 
     private static final String USER_ID_VALIDATION_MESSAGE = "userId должен быть больше 0";
     private static final String EVENT_ID_VALIDATION_MESSAGE = "eventId должен быть больше 0";
+
     @GetMapping
-    @ResponseStatus(HttpStatus.OK)
-    public List<ParticipationRequestDto> findEventRequests(
+    public ResponseEntity<List<ParticipationRequestDto>> findEventRequests(
             @PathVariable
             @Positive(message = USER_ID_VALIDATION_MESSAGE)
             Long userId,
@@ -38,12 +38,12 @@ public class PrivateEventRequestController {
             @Positive(message = EVENT_ID_VALIDATION_MESSAGE)
             Long eventId
     ) {
-        return requestService.findEventRequests(eventId, userId);
+        List<ParticipationRequestDto> requests = requestService.findEventRequests(eventId, userId);
+        return ResponseEntity.ok(requests);
     }
 
     @PatchMapping
-    @ResponseStatus(HttpStatus.OK)
-    public EventRequestStatusUpdateResult updateRequestStatus(
+    public ResponseEntity<EventRequestStatusUpdateResult> updateRequestStatus(
             @PathVariable
             @Positive(message = USER_ID_VALIDATION_MESSAGE)
             Long userId,
@@ -58,6 +58,7 @@ public class PrivateEventRequestController {
     ) {
         EventRequestStatusUpdateRequestParam updateEventRequestParam =
                 new EventRequestStatusUpdateRequestParam(userId, eventId, updateRequest);
-        return requestService.updateRequestStatus(updateEventRequestParam);
+        EventRequestStatusUpdateResult result = requestService.updateRequestStatus(updateEventRequestParam);
+        return ResponseEntity.ok(result);
     }
 }

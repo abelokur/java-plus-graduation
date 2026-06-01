@@ -1,6 +1,7 @@
 package ru.practicum.client.request;
 
 import org.springframework.cloud.openfeign.FallbackFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -16,15 +17,17 @@ public class RequestFeignClientFallbackFactory implements FallbackFactory<Reques
     public RequestFeignClient create(Throwable cause) {
         return new RequestFeignClient() {
             @Override
-            public Long getConfirmedRequests(Long eventId) {
+            public ResponseEntity<Long> getConfirmedRequests(Long eventId) {
                 fastFallBack(cause);
-                return 0L;
+                return ResponseEntity.ok(0L);
             }
 
             @Override
-            public Map<Long, Long> getConfirmedRequestsForEvents(List<Long> eventIds) {
+            public ResponseEntity<Map<Long, Long>> getConfirmedRequestsForEvents(List<Long> eventIds) {
                 fastFallBack(cause);
-                return eventIds.stream().collect(Collectors.toMap(Function.identity(), e -> 0L));
+                Map<Long, Long> defaultMap = eventIds.stream()
+                        .collect(Collectors.toMap(Function.identity(), e -> 0L));
+                return ResponseEntity.ok(defaultMap);
             }
         };
     }

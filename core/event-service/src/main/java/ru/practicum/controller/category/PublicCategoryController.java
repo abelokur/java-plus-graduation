@@ -5,7 +5,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
@@ -25,18 +25,18 @@ public class PublicCategoryController {
     private final CategoryService categoryService;
 
     @GetMapping
-    @ResponseStatus(HttpStatus.OK)
-    public List<CategoryDto> getAllCategories(
+    public ResponseEntity<List<CategoryDto>> getAllCategories(
             @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
             @RequestParam(defaultValue = "10") @Positive Integer size
     ) {
         Pageable pageable = new OffsetBasedPageable(from, size);
-        return categoryService.findAll(pageable);
+        List<CategoryDto> categories = categoryService.findAll(pageable);
+        return ResponseEntity.ok(categories);
     }
 
     @GetMapping("/{categoryId}")
-    @ResponseStatus(HttpStatus.OK)
-    public CategoryDto getCategoryById(@PathVariable Long categoryId) {
-        return categoryService.findById(categoryId);
+    public ResponseEntity<CategoryDto> getCategoryById(@PathVariable Long categoryId) {
+        CategoryDto category = categoryService.findById(categoryId);
+        return ResponseEntity.ok(category);
     }
 }

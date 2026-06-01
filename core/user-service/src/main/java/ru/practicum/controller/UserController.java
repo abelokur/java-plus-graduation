@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
@@ -24,24 +25,25 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public List<UserDto> findAll(
+    public ResponseEntity<List<UserDto>> findAll(
             @RequestParam(required = false) List<Long> ids,
             @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
             @RequestParam(defaultValue = "10") @Positive Integer size
     ) {
         UserParam userParam = new UserParam(ids, from, size);
-        return userService.findAll(userParam);
+        List<UserDto> users = userService.findAll(userParam);
+        return ResponseEntity.ok(users);
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public UserDto save(@RequestBody @Valid NewUserRequest user) {
-        return userService.save(user);
+    public ResponseEntity<UserDto> save(@RequestBody @Valid NewUserRequest user) {
+        UserDto savedUser = userService.save(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
     }
 
     @DeleteMapping("/{userId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteById(@PathVariable @Positive Long userId) {
+    public ResponseEntity<Void> deleteById(@PathVariable @Positive Long userId) {
         userService.deleteById(userId);
+        return ResponseEntity.noContent().build();
     }
 }

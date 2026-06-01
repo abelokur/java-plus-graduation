@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
 import ru.practicum.dto.compilation.CompilationDto;
@@ -20,20 +21,21 @@ public class AdminCompilationController {
     private final CompilationService compilationService;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public CompilationDto createCompilation(@RequestBody @Valid NewCompilationRequest compilationDto) {
-        return compilationService.createCompilation(compilationDto);
+    public ResponseEntity<CompilationDto> createCompilation(@RequestBody @Valid NewCompilationRequest compilationDto) {
+        CompilationDto created = compilationService.createCompilation(compilationDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @DeleteMapping("/{compId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteCompilation(@PathVariable("compId") Long compilationId) {
+    public ResponseEntity<Void> deleteCompilation(@PathVariable("compId") Long compilationId) {
         compilationService.deleteCompilation(compilationId);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{compId}")
-    public CompilationDto updateCompilation(@RequestBody @Valid UpdateCompilationRequest compilationUpdateDto,
-                                            @PathVariable("compId") Long compilationId) {
-        return compilationService.updateCompilation(compilationId, compilationUpdateDto);
+    public ResponseEntity<CompilationDto> updateCompilation(@RequestBody @Valid UpdateCompilationRequest compilationUpdateDto,
+                                                            @PathVariable("compId") Long compilationId) {
+        CompilationDto updated = compilationService.updateCompilation(compilationId, compilationUpdateDto);
+        return ResponseEntity.ok(updated);
     }
 }

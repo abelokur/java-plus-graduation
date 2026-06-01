@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
@@ -21,23 +22,23 @@ public class AdminCategoryController {
     private final CategoryService categoryService;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public CategoryDto createCategory(@Valid @RequestBody CategoryDto category) {
-        return categoryService.save(category);
+    public ResponseEntity<CategoryDto> createCategory(@Valid @RequestBody CategoryDto category) {
+        CategoryDto created = categoryService.save(category);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PatchMapping("/{categoryId}")
-    @ResponseStatus(HttpStatus.OK)
-    public CategoryDto updateCategory(
+    public ResponseEntity<CategoryDto> updateCategory(
             @PathVariable @Positive Long categoryId,
             @Valid @RequestBody CategoryDto category
     ) {
-        return categoryService.update(categoryId, category);
+        CategoryDto updated = categoryService.update(categoryId, category);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{categoryId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteCategory(@PathVariable @Positive Long categoryId) {
+    public ResponseEntity<Void> deleteCategory(@PathVariable @Positive Long categoryId) {
         categoryService.delete(categoryId);
+        return ResponseEntity.noContent().build();
     }
 }

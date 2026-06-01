@@ -1,9 +1,11 @@
 package ru.practicum.service.compilation;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.client.user.UserFeignClient;
@@ -30,6 +32,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class CompilationServiceImpl implements CompilationService {
@@ -161,7 +164,7 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     private Set<EventShortDto> eventsToShortDto(Set<Event> events) {
-        if (events == null) {
+        if (events == null || events.isEmpty()) {
             return Set.of();
         }
 
@@ -169,12 +172,19 @@ public class CompilationServiceImpl implements CompilationService {
                 .map(Event::getInitiatorId)
                 .collect(Collectors.toSet());
 
-        Map<Long, UserShortDto> users = userFeignClient.getUsersByIds(userIds).stream()
+        ResponseEntity<Set<UserDto>> usersResponse = userFeignClient.getUsersByIds(userIds);
+        Set<UserDto> users = usersResponse.getBody();
+
+        if (users == null) {
+            log.warn("No users found for ids: {}", userIds);
+            return Set.of();
+        }
+
+        Map<Long, UserShortDto> userMap = users.stream()
                 .collect(Collectors.toMap(UserDto::id, UserDto::toShortDto));
 
-
         return events.stream()
-                .map(event -> eventMapper.toShortDto(event, users.get(event.getInitiatorId())))
+                .map(event -> eventMapper.toShortDto(event, userMap.get(event.getInitiatorId())))
                 .collect(Collectors.toSet());
     }
 }

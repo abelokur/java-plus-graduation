@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
@@ -34,20 +34,18 @@ public class PublicEventController {
     private String serviceName;
 
     @GetMapping
-    @ResponseStatus(HttpStatus.OK)
-    public List<EventShortDto> findPublicEvents(
+    public ResponseEntity<List<EventShortDto>> findPublicEvents(
             @Valid @ModelAttribute EventPublicParam params,
             HttpServletRequest request) {
         List<EventShortDto> events = eventService.findPublicEvents(params);
         if (!events.isEmpty()) {
             saveHit(request);
         }
-        return events;
+        return ResponseEntity.ok(events);
     }
 
     @GetMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public EventFullDto findPublicEventById(
+    public ResponseEntity<EventFullDto> findPublicEventById(
             @Positive(message = "eventId должен быть больше 0")
             @PathVariable
             Long id,
@@ -55,7 +53,7 @@ public class PublicEventController {
     ) {
         EventFullDto event = eventService.findPublicEventById(id);
         saveHit(request);
-        return event;
+        return ResponseEntity.ok(event);
     }
 
     private void saveHit(HttpServletRequest request) {
@@ -67,7 +65,7 @@ public class PublicEventController {
                     .timestamp(LocalDateTime.now())
                     .build());
         } catch (Exception e) {
-            // Не бросаем исключение дальше - статистика не должна ломать основной flow
+            log.warn("Failed to save hit for URI: {}", request.getRequestURI(), e);
         }
     }
 }

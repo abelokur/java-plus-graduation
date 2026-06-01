@@ -5,6 +5,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
 import ru.practicum.dto.compilation.CompilationDto;
@@ -22,15 +23,17 @@ public class PublicCompilationController {
     private final CompilationService compilationService;
 
     @GetMapping
-    public List<CompilationDto> getAllCompilations(@RequestParam(required = false, name = "pinned") Boolean pinned,
-                                                   @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
-                                                   @RequestParam(defaultValue = "10") @Positive Integer size) {
-       Pageable pageable = new OffsetBasedPageable(from, size);
-        return compilationService.findCompilationsByParam(pinned, pageable);
+    public ResponseEntity<List<CompilationDto>> getAllCompilations(@RequestParam(required = false, name = "pinned") Boolean pinned,
+                                                                   @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+                                                                   @RequestParam(defaultValue = "10") @Positive Integer size) {
+        Pageable pageable = new OffsetBasedPageable(from, size);
+        List<CompilationDto> compilations = compilationService.findCompilationsByParam(pinned, pageable);
+        return ResponseEntity.ok(compilations);
     }
 
     @GetMapping("/{compId}")
-    public CompilationDto getCompilationById(@PathVariable("compId") Long compilationId) {
-        return compilationService.findCompilationById(compilationId);
+    public ResponseEntity<CompilationDto> getCompilationById(@PathVariable("compId") Long compilationId) {
+        CompilationDto compilation = compilationService.findCompilationById(compilationId);
+        return ResponseEntity.ok(compilation);
     }
 }

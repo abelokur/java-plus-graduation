@@ -2,6 +2,7 @@ package ru.practicum.client.event;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.exception.ServiceTemporaryUnavailableException;
@@ -18,22 +19,22 @@ public class EventFeignClientFallbackFactory implements FallbackFactory<EventFei
         return new EventFeignClient() {
 
             @Override
-            public EventFullDto getEventById(Long id) {
+            public ResponseEntity<EventFullDto> getEventById(Long id) {
                 fastFallBack(cause);
                 throw new ServiceTemporaryUnavailableException(cause.getMessage());
             }
 
             @Override
-            public EventFullDto getEventByIdAndInitiatorId(Long eventId, Long initiatorId) {
+            public ResponseEntity<EventFullDto> getEventByIdAndInitiatorId(Long eventId, Long initiatorId) {
                 fastFallBack(cause);
                 throw new ServiceTemporaryUnavailableException(cause.getMessage());
             }
 
             @Override
-            public void updateEventsConfirmedRequests(Map<Long, Long> confirmedRequests) {
+            public ResponseEntity<Void> updateEventsConfirmedRequests(Map<Long, Long> confirmedRequests) {
                 fastFallBack(cause);
+                throw new ServiceTemporaryUnavailableException(cause.getMessage());
             }
         };
-
     }
 }

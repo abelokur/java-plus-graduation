@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.client.EventClient;
@@ -43,7 +44,8 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Cacheable(cacheNames = "comments")
     public List<CommentDto> getComments(Long userId) {
-        UserDto userDto = userClient.getUserById(userId);
+        ResponseEntity<UserDto> userResponse = userClient.getUserById(userId);
+        UserDto userDto = userResponse.getBody();
 
         List<Comment> comments = commentRepository.findAllByAuthorId(userDto.id());
 
@@ -56,9 +58,11 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     @CacheEvict(cacheNames = "comments", allEntries = true)
     public CommentDto createComment(Long userId, NewCommentRequest request) {
-        UserDto userDto = userClient.getUserById(userId);
+        ResponseEntity<UserDto> userResponse = userClient.getUserById(userId);
+        UserDto userDto = userResponse.getBody();
 
-        EventFullDto event = eventClient.getEventById(request.event());
+        ResponseEntity<EventFullDto> eventResponse = eventClient.getEventById(request.event());
+        EventFullDto event = eventResponse.getBody();
 
         Comment comment = commentRepository.save(commentMapper
                 .toEntity(request, userDto.id(), event.id(), CommentState.WAITING));
@@ -70,7 +74,8 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     @CacheEvict(cacheNames = "comments", allEntries = true)
     public CommentDto updateComment(Long userId, UpdateCommentRequest commentDto) {
-        UserDto userDto = userClient.getUserById(userId);
+        ResponseEntity<UserDto> userResponse = userClient.getUserById(userId);
+        UserDto userDto = userResponse.getBody();
 
         Comment comment = commentRepository.findById(commentDto.id())
                 .orElseThrow(() -> new NotFoundException("Комментария с id " + commentDto.id() + " не найдено"));
@@ -134,7 +139,8 @@ public class CommentServiceImpl implements CommentService {
             comment.setState(CommentState.REJECTED);
         }
 
-        UserDto userDto = userClient.getUserById(comment.getAuthorId());
+        ResponseEntity<UserDto> userResponse = userClient.getUserById(comment.getAuthorId());
+        UserDto userDto = userResponse.getBody();
 
         return commentMapper.toAdminDto(comment, userDto.name());
     }
@@ -197,8 +203,14 @@ public class CommentServiceImpl implements CommentService {
                 .map(Comment::getAuthorId)
                 .collect(Collectors.toSet());
 
-        return userClient.getUsersByIds(authorIds).stream()
+        ResponseEntity<Set<UserDto>> usersResponse = userClient.getUsersByIds(authorIds);
+        Set<UserDto> users = usersResponse.getBody();
+
+        if (users == null) {
+            return Collections.emptyMap();
+        }
+
+        return users.stream()
                 .collect(Collectors.toMap(UserDto::id, UserDto::name));
     }
-
 }

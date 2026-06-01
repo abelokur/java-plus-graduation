@@ -2,6 +2,7 @@ package ru.practicum.client.user;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import ru.practicum.dto.user.UserDto;
 import ru.practicum.exception.ServiceTemporaryUnavailableException;
@@ -17,15 +18,15 @@ public class UserFeignClientFallbackFactory implements FallbackFactory<UserFeign
     public UserFeignClient create(Throwable cause) {
         return new UserFeignClient() {
             @Override
-            public UserDto getUserById(Long id) {
+            public ResponseEntity<UserDto> getUserById(Long id) {
                 fastFallBack(cause);
                 throw new ServiceTemporaryUnavailableException(cause.getMessage());
             }
 
             @Override
-            public Set<UserDto> getUsersByIds(Set<Long> ids) {
+            public ResponseEntity<Set<UserDto>> getUsersByIds(Set<Long> ids) {
                 fastFallBack(cause);
-                return Set.of();
+                throw new ServiceTemporaryUnavailableException(cause.getMessage());
             }
         };
     }

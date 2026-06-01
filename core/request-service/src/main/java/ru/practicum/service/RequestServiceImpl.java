@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import ru.practicum.client.EventClient;
@@ -45,7 +46,12 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Cacheable(cacheNames = "requests")
     public List<ParticipationRequestDto> getUserRequests(Long userId) {
-        UserDto userDto = userClient.getUserById(userId);
+        ResponseEntity<UserDto> userResponse = userClient.getUserById(userId);
+        UserDto userDto = userResponse.getBody();
+
+        if (userDto == null) {
+            throw new NotFoundException("Пользователь с id " + userId + " не найден");
+        }
 
         return requestRepository.findAllByRequesterId(userDto.id()).stream()
                 .map(requestMapper::toDto)
@@ -55,8 +61,19 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @CacheEvict(cacheNames = "requests", allEntries = true)
     public ParticipationRequestDto createRequest(Long userId, Long eventId) {
-        UserDto userDto = userClient.getUserById(userId);
-        EventFullDto event = eventClient.getEventById(eventId);
+        ResponseEntity<UserDto> userResponse = userClient.getUserById(userId);
+        UserDto userDto = userResponse.getBody();
+
+        if (userDto == null) {
+            throw new NotFoundException("Пользователь с id " + userId + " не найден");
+        }
+
+        ResponseEntity<EventFullDto> eventResponse = eventClient.getEventById(eventId);
+        EventFullDto event = eventResponse.getBody();
+
+        if (event == null) {
+            throw new NotFoundException("Событие с id " + eventId + " не найдено");
+        }
 
         validateCreation(userDto, event);
 
@@ -73,12 +90,18 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @CacheEvict(cacheNames = "requests", allEntries = true)
     public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
-        UserDto userDto = userClient.getUserById(userId);
+        ResponseEntity<UserDto> userResponse = userClient.getUserById(userId);
+        UserDto userDto = userResponse.getBody();
+
+        if (userDto == null) {
+            throw new NotFoundException("Пользователь с id " + userId + " не найден");
+        }
+
         Request request = getRequestById(requestId);
 
         if (!userDto.id().equals(request.getRequesterId())) {
             throw new ValidationException("Пользователь id=" + userDto.id() +
-                                          " не может отменить заявку id=" + request.getId());
+                    " не может отменить заявку id=" + request.getId());
         }
 
         if (RequestStatus.CANCELED.equals(request.getStatus()) || RequestStatus.REJECTED.equals(request.getStatus())) {
@@ -93,7 +116,8 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Cacheable(cacheNames = "requests")
     public List<ParticipationRequestDto> findEventRequests(Long eventId, Long userId) {
-        EventFullDto event = eventClient.getEventByIdAndInitiatorId(eventId, userId);
+        ResponseEntity<EventFullDto> eventResponse = eventClient.getEventByIdAndInitiatorId(eventId, userId);
+        EventFullDto event = eventResponse.getBody();
 
         if (event == null) {
             throw new NotFoundException("Событие id=" + eventId + " не найдено");
@@ -153,9 +177,10 @@ public class RequestServiceImpl implements RequestService {
             return eventIds.stream().collect(Collectors.toMap(id -> id, id -> 0L));
         }
     }
+
     protected EventRequestStatusUpdateResult updateRequestStatusInternal(EventRequestStatusUpdateRequestParam requestParam) {
-        EventRequestStatusUpdateRequest updateRequest = requestParam.updateRequest();
-        EventFullDto event = eventClient.getEventByIdAndInitiatorId(requestParam.eventId(), requestParam.userId());
+        ResponseEntity<EventFullDto> eventResponse = eventClient.getEventByIdAndInitiatorId(requestParam.eventId(), requestParam.userId());
+        EventFullDto event = eventResponse.getBody();
 
         if (event == null) {
             throw new NotFoundException("Событие id=" + requestParam.eventId() + " не найдено");
@@ -163,24 +188,24 @@ public class RequestServiceImpl implements RequestService {
 
         if (!event.initiator().id().equals(requestParam.userId())) {
             throw new ValidationException("Пользователь id=" + requestParam.userId()
-                                          + " не является организатором события id=" + requestParam.eventId());
+                    + " не является организатором события id=" + requestParam.eventId());
         }
 
         Long confirmed = getConfirmedRequests(requestParam.eventId());
 
         if (requestParam.updateRequest().status().equals(RequestStatus.CONFIRMED) &&
-            event.participantLimit() != 0 &&
-            confirmed >= event.participantLimit()) {
+                event.participantLimit() != 0 &&
+                confirmed >= event.participantLimit()) {
             throw new ConditionsNotMetException("Достигнут лимит по заявкам на событие - " + event.id());
         }
 
-        List<Request> requestsToUpdate = requestRepository.findAllById(updateRequest.requestIds());
+        List<Request> requestsToUpdate = requestRepository.findAllById(requestParam.updateRequest().requestIds());
 
         requestsToUpdate.forEach(request -> {
             if (!request.getStatus().equals(RequestStatus.PENDING)) {
                 throw new ConditionsNotMetException(
                         "Статус можно изменить только у заявок в состоянии ожидания. " +
-                        "Текущий статус заявки " + request.getId() + ": " + request.getStatus());
+                                "Текущий статус заявки " + request.getId() + ": " + request.getStatus());
             }
         });
 
@@ -196,7 +221,7 @@ public class RequestServiceImpl implements RequestService {
         long availableSlots = event.participantLimit() - event.confirmedRequests();
 
         for (Request request : requestsToUpdate) {
-            if (availableSlots > 0 && updateRequest.status().equals(RequestStatus.CONFIRMED)) {
+            if (availableSlots > 0 && requestParam.updateRequest().status().equals(RequestStatus.CONFIRMED)) {
                 request.setStatus(RequestStatus.CONFIRMED);
                 confirmedRequests.add(request);
                 availableSlots--;
@@ -220,7 +245,7 @@ public class RequestServiceImpl implements RequestService {
     private void validateCreation(UserDto userDto, EventFullDto event) {
         if (userDto.id().equals(event.initiator().id())) {
             throw new AlreadyExistsException("Пользователя " + userDto.id() +
-                                             " не может добавить запрос на участие в своем событии " + event.id());
+                    " не может добавить запрос на участие в своем событии " + event.id());
         }
 
         if (!EventState.PUBLISHED.equals(event.state())) {
@@ -229,11 +254,11 @@ public class RequestServiceImpl implements RequestService {
 
         if (requestRepository.findAllByRequesterIdAndEventId(userDto.id(), event.id()).isPresent()) {
             throw new AlreadyExistsException("Для пользователя " + userDto.id() +
-                                             " уже существует запрос на участие в событие " + event.id());
+                    " уже существует запрос на участие в событие " + event.id());
         }
 
         if (event.participantLimit() != 0 &&
-            requestRepository.countByEventIdAndStatus(event.id(), RequestStatus.CONFIRMED) >= event.participantLimit()) {
+                requestRepository.countByEventIdAndStatus(event.id(), RequestStatus.CONFIRMED) >= event.participantLimit()) {
             throw new AlreadyExistsException("Достигнут лимит запросов на участие " + event.id());
         }
     }

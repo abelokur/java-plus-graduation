@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
@@ -25,19 +25,19 @@ public class AdminEventController {
     private final EventService eventService;
 
     @GetMapping
-    @ResponseStatus(HttpStatus.OK)
-    public List<EventFullDto> findAll(
+    public ResponseEntity<List<EventFullDto>> findAll(
             @Valid @ModelAttribute AdminEventParam params
     ) {
-        return eventService.findAllAdmin(params);
+        List<EventFullDto> events = eventService.findAllAdmin(params);
+        return ResponseEntity.ok(events);
     }
 
     @PatchMapping("/{eventId}")
-    @ResponseStatus(HttpStatus.OK)
-    public EventFullDto update(
+    public ResponseEntity<EventFullDto> update(
             @PathVariable @Positive Long eventId,
             @Valid @RequestBody UpdateEventAdminRequest event
     ) {
-        return eventService.updateAdminEvent(eventId, event);
+        EventFullDto updatedEvent = eventService.updateAdminEvent(eventId, event);
+        return ResponseEntity.ok(updatedEvent);
     }
 }
