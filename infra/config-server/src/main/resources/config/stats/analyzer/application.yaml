@@ -1,6 +1,3 @@
-server:
-  port: 0 # Порт, на котором будет работать сервис (0-выбирается случайным образом)
-
 grpc:
   server:
     port: 0
@@ -31,9 +28,6 @@ kafka:
     value.deserializer: ru.practicum.EventSimilarityDeserializer
     auto.offset.reset: earliest
     enable.auto.commit: false
-    # Настройки батчинга
-    fetch.min.bytes: 100
-    fetch.max.wait.ms: 500
 
   user_action-consumer-properties:
     bootstrap.servers: localhost:9092
@@ -42,9 +36,6 @@ kafka:
     value.deserializer: ru.practicum.UserActionDeserializer
     auto.offset.reset: earliest
     enable.auto.commit: false
-    # Настройки батчинга
-    fetch.min.bytes: 100
-    fetch.max.wait.ms: 500
 
   topics:
     USER_ACTION: stats.user-actions.v1
