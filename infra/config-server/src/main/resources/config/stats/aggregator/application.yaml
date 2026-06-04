@@ -1,0 +1,43 @@
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+
+kafka:
+  producer-properties:
+    bootstrap.servers: localhost:9092
+    key.serializer: org.apache.kafka.common.serialization.LongSerializer
+    value.serializer: ru.practicum.GeneralAvroSerializer
+    # Настройки батчинга
+    batch.size: 16384                    # Максимальный объем батча в байтах (16KB)
+    linger.ms: 100                       # Максимальное время ожидания в ms
+    buffer.memory: 33554432              # Общий объем буфера в байтах (32MB)
+    max.request.size: 1048576            # Максимальный размер запроса в байтах (1MB)
+    compression.type: none               # Тип сжатия (none, gzip, snappy, lz4, zstd)
+
+  consumer-properties:
+    bootstrap.servers: localhost:9092
+    group.id: user_action-aggregator-group
+    key.deserializer: org.apache.kafka.common.serialization.LongDeserializer
+    value.deserializer: ru.practicum.UserActionDeserializer
+    auto.offset.reset: earliest
+    enable.auto.commit: false
+    # Настройки батчинга
+    fetch.min.bytes: 100
+    fetch.max.wait.ms: 500
+
+  topics:
+    USER_ACTION: stats.user-actions.v1
+    EVENT_SIMILARITY: stats.events-similarity.v1
+
+aggregator:
+  user-action:
+    weight:
+      view: 0.4
+      register: 0.8
+      like: 1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,configprops
