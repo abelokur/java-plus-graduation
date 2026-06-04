@@ -12,7 +12,7 @@ spring:
     url: jdbc:postgresql://localhost:5432/statsdb
     driver-class-name: org.postgresql.Driver
     username: postgres
-    password: 12345
+    password: postgres
 
 logging:
   level:
@@ -21,16 +21,3 @@ logging:
       transaction: INFO
       transaction.interceptor: TRACE
       orm.jpa.JpaTransactionManager: DEBUG
-
----
-spring:
-  config.activate.on-profile: test
-  datasource:
-    url: jdbc:h2:mem:stats-db
-    driver-class-name: org.h2.Driver
-    username: statsdb
-    password: statsdb
-  jpa.database-platform: org.hibernate.dialect.H2Dialect
-  h2.console:
-    enabled: true
-    path: /stats-h2-console
