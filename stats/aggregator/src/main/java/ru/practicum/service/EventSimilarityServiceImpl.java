@@ -36,7 +36,11 @@ public class EventSimilarityServiceImpl implements EventSimilarityService {
         double oldWeight = inmemoryRepository.getEventUserWeight(eventId, userId);
         double newWeight = getWeight(userAction.getActionType());
 
+        log.debug("oldWeight: {}, newWeight: {}", oldWeight, newWeight);
+
         if (newWeight <= oldWeight) {
+            log.debug("Weight not increased ({} <= {}). Skipping similarity calculations.",
+                    newWeight, oldWeight);
             return Collections.emptyList();
         }
 
@@ -46,11 +50,13 @@ public class EventSimilarityServiceImpl implements EventSimilarityService {
         // 2. Обновляем сумму весов события
         double oldEventWeightSum = inmemoryRepository.getEventWeightSum(eventId);
         inmemoryRepository.putEventWeightSum(eventId, (oldEventWeightSum - oldWeight + newWeight));
+        log.debug("oldEventWeightSum: {}, newEventWeightSum: {}", oldEventWeightSum, inmemoryRepository.getEventWeightSum(eventId));
 
         // 3. Получаем другие события пользователя
         Set<Long> userEvents = new HashSet<>(inmemoryRepository.getUserEvents(userId));
         userEvents.remove(eventId);
 
+        log.debug("userEvents: {}", userEvents);
         // 4. Для каждого другого события пользователя
         for (Long otherEventId : userEvents) {
             double otherWeight = inmemoryRepository.getEventUserWeight(otherEventId, userId);
@@ -122,12 +128,17 @@ public class EventSimilarityServiceImpl implements EventSimilarityService {
     }
 
     private double calculateSimilarity(double minWeightSum, double eventAWeightSum, double eventBWeightSum) {
-        double productOfSqrtEventWeights =
-                Math.sqrt(eventAWeightSum) *
-                Math.sqrt(eventBWeightSum);
-        if (productOfSqrtEventWeights == 0.0) {
+        if (minWeightSum == 0.0 || eventAWeightSum == 0.0 || eventBWeightSum == 0.0) {
             return 0.0;
         }
-        return minWeightSum / productOfSqrtEventWeights;
+
+        double eventWeightSqrt1 = Math.sqrt(eventAWeightSum);
+        double eventWeightSqrt2 = Math.sqrt(eventBWeightSum);
+        double eventSimilarity = minWeightSum / (eventWeightSqrt1 * eventWeightSqrt2);
+
+        log.debug("eventSimilarity: {}, minWeightSum: {}, eventWeightSqrt1: {}, eventWeightSqrt2: {}",
+                eventSimilarity, minWeightSum, eventWeightSqrt1, eventWeightSqrt2);
+
+        return eventSimilarity;
     }
 }

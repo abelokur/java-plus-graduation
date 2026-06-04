@@ -28,11 +28,10 @@ public class AggregationStarter implements CommandLineRunner {
     private final EventSimilarityService eventSimilarityService;
 
     private final KafkaConfig kafkaConfig;
-    private static final Duration POLL_DURATION = Duration.ofSeconds(3);
+    private static final Duration POLL_DURATION = Duration.ofMillis(100);
 
 
     public AggregationStarter(KafkaConfig kafkaConfig,
-                              WeightConfig weightConfig,
                               EventSimilarityService eventSimilarityService) {
         this.kafkaConfig = kafkaConfig;
         this.producer = new KafkaProducer<>(kafkaConfig.getProducerProperties());
@@ -58,12 +57,17 @@ public class AggregationStarter implements CommandLineRunner {
             while (true) {
                 ConsumerRecords<Long, UserActionAvro> records = consumer.poll(POLL_DURATION);
 
+                if (records.isEmpty()) continue;
+
                 if (records.count() > 0) {
                     log.debug("Processing {} user actions", records.count());
                 }
 
                 for (ConsumerRecord<Long, UserActionAvro> record : records) {
-                    eventSimilarityService.updateEventSimilarity(record.value()).forEach(this::sendEventSimilarity);
+                    List<EventSimilarityAvro> eventSimilarityAvros = eventSimilarityService.updateEventSimilarity(record.value());
+                    if (eventSimilarityAvros.isEmpty()) continue;
+                    log.debug("Sending {} event similarities", eventSimilarityAvros.size());
+                    eventSimilarityAvros.forEach(this::sendEventSimilarity);
                 }
 
                 consumer.commitSync();
@@ -111,6 +115,4 @@ public class AggregationStarter implements CommandLineRunner {
             }
         });
     }
-
-
 }
