@@ -1,3 +1,6 @@
+server:
+  port: 0 # Порт, на котором будет работать сервис (0-выбирается случайным образом)
+
 grpc:
   server:
     port: 0
@@ -27,3 +30,7 @@ management:
     web:
       exposure:
         include: health,info,metrics,configprops
+
+logging:
+  level:
+    ru.practicum: DEBUG

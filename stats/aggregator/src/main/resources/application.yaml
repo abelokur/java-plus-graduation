@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: aggregator # Имя текущего микросервиса, используется для идентификации в Eureka и Config Server
+  profiles:
+    active: stats # Активный профиль, используется для загрузки конфигурации из Config Server
+  config:
+    import: "configserver:" # Указывает, что конфигурация должна быть загружена с Config Server
+  cloud:
+    config:
+      fail-fast: true # Если true, приложение завершит работу при ошибке подключения к Config Server
+      retry:
+        useRandomPolicy: true # Использовать случайную задержку между попытками подключения
+        max-interval: 7000 # Максимальный интервал между попытками подключения в миллисекундах
+        max-attempts: 7 # Максимальное количество попыток подключения к Config Server
+      discovery:
+        enabled: true # Включает обнаружение Config Server через Eureka
+        serviceId: config-server # Имя сервиса Config Server в Eureka
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://${eureka.instance.hostname:localhost}:${eureka.instance.port:8761}/eureka/ # URL сервера Eureka для регистрации и обнаружения сервисов

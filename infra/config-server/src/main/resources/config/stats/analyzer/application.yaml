@@ -1,3 +1,6 @@
+server:
+  port: 0 # Порт, на котором будет работать сервис (0-выбирается случайным образом)
+
 grpc:
   server:
     port: 0
@@ -54,3 +57,4 @@ logging:
       transaction: INFO
       transaction.interceptor: TRACE
       orm.jpa.JpaTransactionManager: DEBUG
+    ru.practicum: DEBUG
