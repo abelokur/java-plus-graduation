@@ -57,17 +57,12 @@ public class AggregationStarter implements CommandLineRunner {
             while (true) {
                 ConsumerRecords<Long, UserActionAvro> records = consumer.poll(POLL_DURATION);
 
-                if (records.isEmpty()) continue;
-
                 if (records.count() > 0) {
                     log.debug("Processing {} user actions", records.count());
                 }
 
                 for (ConsumerRecord<Long, UserActionAvro> record : records) {
-                    List<EventSimilarityAvro> eventSimilarityAvros = eventSimilarityService.updateEventSimilarity(record.value());
-                    if (eventSimilarityAvros.isEmpty()) continue;
-                    log.debug("Sending {} event similarities", eventSimilarityAvros.size());
-                    eventSimilarityAvros.forEach(this::sendEventSimilarity);
+                    eventSimilarityService.updateEventSimilarity(record.value()).forEach(this::sendEventSimilarity);
                 }
 
                 consumer.commitSync();

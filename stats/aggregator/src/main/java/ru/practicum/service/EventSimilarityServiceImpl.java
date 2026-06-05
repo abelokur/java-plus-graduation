@@ -35,12 +35,13 @@ public class EventSimilarityServiceImpl implements EventSimilarityService {
 
         double oldWeight = repository.getEventUserWeight(eventId, userId);
         double newWeight = getWeight(userAction.getActionType());
+        double deltaWeight = newWeight - oldWeight;
 
-        log.debug("oldWeight: {}, newWeight: {}", oldWeight, newWeight);
 
-        if (newWeight <= oldWeight) {
+        if (deltaWeight <= 0) {
             log.debug("Weight not increased ({} <= {}). Skipping similarity calculations.",
                     newWeight, oldWeight);
+            repository.putUserEvent(userId, eventId);
             return Collections.emptyList();
         }
 
@@ -49,41 +50,39 @@ public class EventSimilarityServiceImpl implements EventSimilarityService {
 
         // 2. Обновляем сумму весов события
         double oldEventWeightSum = repository.getEventWeightSum(eventId);
-        double newEventWeightSum = oldEventWeightSum - oldWeight + newWeight;
+        double newEventWeightSum = oldEventWeightSum + deltaWeight;
         repository.putEventWeightSum(eventId, newEventWeightSum);
         log.debug("oldEventWeightSum: {}, newEventWeightSum: {}", oldEventWeightSum, newEventWeightSum);
 
         // 3. Получаем другие события пользователя
         Set<Long> userEvents = new HashSet<>(repository.getUserEvents(userId));
         userEvents.remove(eventId);
+        log.debug("Need to calculate [{}] similarities", userEvents.size());
 
-        log.debug("userEvents: {}", userEvents);
         // 4. Для каждого другого события пользователя
         for (Long otherEventId : userEvents) {
             double otherWeight = repository.getEventUserWeight(otherEventId, userId);
 
             double oldMin = Math.min(oldWeight, otherWeight);
             double newMin = Math.min(newWeight, otherWeight);
+            double deltaMin = newMin - oldMin;
 
-            // Если минимум изменился
-            if (newMin != oldMin) {
+            // Если минимум изменился (по ТЗ может только увеличиться)
+            if (deltaMin > 0) {
                 // Получаем текущую сумму и обновляем ее
                 double oldMinSum = repository.getMinWeightSum(eventId, otherEventId);
-                double newMinSum = oldMinSum - oldMin + newMin;
+                double newMinSum = oldMinSum + deltaMin;
 
                 repository.putMinWeightSum(eventId, otherEventId, newMinSum);
 
-                log.debug("Pair ({}, {}): oldWeight={}, newWeight={}, otherWeight={}, oldMin={}, newMin={}",
-                        eventId, otherEventId, oldWeight, newWeight, otherWeight, oldMin, newMin);
+                log.debug("Pair events ({}, {}): oldWeight={}, newWeight={}, oldMin={}, newMin={}",
+                        eventId, otherEventId, oldWeight, newWeight, oldMin, newMin);
             }
 
             // 5. Вычисляем схожесть
             double minWeightSum = repository.getMinWeightSum(eventId, otherEventId);
             double eventWeightSum = repository.getEventWeightSum(eventId);
             double otherEventWeightSum = repository.getEventWeightSum(otherEventId);
-
-            log.debug("Pair ({}, {}): minWeightSum={}, eventWeightSum={}, otherEventWeightSum={}",
-                    eventId, otherEventId, minWeightSum, eventWeightSum, otherEventWeightSum);
 
             double similarity = calculateSimilarity(minWeightSum, eventWeightSum, otherEventWeightSum);
 
@@ -100,10 +99,8 @@ public class EventSimilarityServiceImpl implements EventSimilarityService {
             }
         }
 
-        // 7. Добавляем событие в историю пользователя (только если вес > 0)
-        if (newWeight > 0) {
-            repository.putUserEvent(userId, eventId);
-        }
+        // 7. Добавляем событие в историю пользователя
+        repository.putUserEvent(userId, eventId);
 
         return eventSimilarityAvros;
     }
@@ -137,7 +134,7 @@ public class EventSimilarityServiceImpl implements EventSimilarityService {
         double eventWeightSqrt2 = Math.sqrt(eventBWeightSum);
         double eventSimilarity = minWeightSum / (eventWeightSqrt1 * eventWeightSqrt2);
 
-        log.debug("eventSimilarity: {}, minWeightSum: {}, eventWeightSqrt1: {}, eventWeightSqrt2: {}",
+        log.debug("Calculating Event Similarity: similarity = {}, MinWeightSum = {}, WeightSqrt1 = {}, WeightSqrt2 = {}",
                 eventSimilarity, minWeightSum, eventWeightSqrt1, eventWeightSqrt2);
 
         return eventSimilarity;
