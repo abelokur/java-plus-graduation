@@ -9,7 +9,7 @@ protocol UserActionProtocol {
 
 	enum ActionTypeAvro {
 		VIEW,
-		LIKE,
-		REGISTER
+		REGISTER,
+		LIKE
 	}
 }

@@ -7,7 +7,7 @@ import ru.practicum.config.WeightConfig;
 import ru.practicum.ewm.stats.avro.ActionTypeAvro;
 import ru.practicum.ewm.stats.avro.EventSimilarityAvro;
 import ru.practicum.ewm.stats.avro.UserActionAvro;
-import ru.practicum.repository.InMemoryRepository;
+import ru.practicum.repository.BaseRepository;
 
 import java.time.Instant;
 import java.util.*;
@@ -17,7 +17,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class EventSimilarityServiceImpl implements EventSimilarityService {
 
-    private final InMemoryRepository inmemoryRepository;
+    private final BaseRepository repository;
     private final WeightConfig weightConfig;
 
     @Override
@@ -26,14 +26,14 @@ public class EventSimilarityServiceImpl implements EventSimilarityService {
             return Collections.emptyList();
         }
 
-        log.debug("Updating score for userAction {}", userAction);
+        log.debug("Updating similarity for userAction {}", userAction);
+
         List<EventSimilarityAvro> eventSimilarityAvros = new ArrayList<>();
 
         long userId = userAction.getUserId();
         long eventId = userAction.getEventId();
 
-        // Получаем Weight для eventId и userId
-        double oldWeight = inmemoryRepository.getEventUserWeight(eventId, userId);
+        double oldWeight = repository.getEventUserWeight(eventId, userId);
         double newWeight = getWeight(userAction.getActionType());
 
         log.debug("oldWeight: {}, newWeight: {}", oldWeight, newWeight);
@@ -45,21 +45,22 @@ public class EventSimilarityServiceImpl implements EventSimilarityService {
         }
 
         // 1. Обновляем вес пользователя для события
-        inmemoryRepository.putEventUserWeight(eventId, userId, newWeight);
+        repository.putEventUserWeight(eventId, userId, newWeight);
 
         // 2. Обновляем сумму весов события
-        double oldEventWeightSum = inmemoryRepository.getEventWeightSum(eventId);
-        inmemoryRepository.putEventWeightSum(eventId, (oldEventWeightSum - oldWeight + newWeight));
-        log.debug("oldEventWeightSum: {}, newEventWeightSum: {}", oldEventWeightSum, inmemoryRepository.getEventWeightSum(eventId));
+        double oldEventWeightSum = repository.getEventWeightSum(eventId);
+        double newEventWeightSum = oldEventWeightSum - oldWeight + newWeight;
+        repository.putEventWeightSum(eventId, newEventWeightSum);
+        log.debug("oldEventWeightSum: {}, newEventWeightSum: {}", oldEventWeightSum, newEventWeightSum);
 
         // 3. Получаем другие события пользователя
-        Set<Long> userEvents = new HashSet<>(inmemoryRepository.getUserEvents(userId));
+        Set<Long> userEvents = new HashSet<>(repository.getUserEvents(userId));
         userEvents.remove(eventId);
 
         log.debug("userEvents: {}", userEvents);
         // 4. Для каждого другого события пользователя
         for (Long otherEventId : userEvents) {
-            double otherWeight = inmemoryRepository.getEventUserWeight(otherEventId, userId);
+            double otherWeight = repository.getEventUserWeight(otherEventId, userId);
 
             double oldMin = Math.min(oldWeight, otherWeight);
             double newMin = Math.min(newWeight, otherWeight);
@@ -67,19 +68,19 @@ public class EventSimilarityServiceImpl implements EventSimilarityService {
             // Если минимум изменился
             if (newMin != oldMin) {
                 // Получаем текущую сумму и обновляем ее
-                double oldMinSum = inmemoryRepository.getMinWeightSum(eventId, otherEventId);
+                double oldMinSum = repository.getMinWeightSum(eventId, otherEventId);
                 double newMinSum = oldMinSum - oldMin + newMin;
 
-                inmemoryRepository.putMinWeightSum(eventId, otherEventId, newMinSum);
+                repository.putMinWeightSum(eventId, otherEventId, newMinSum);
 
                 log.debug("Pair ({}, {}): oldWeight={}, newWeight={}, otherWeight={}, oldMin={}, newMin={}",
                         eventId, otherEventId, oldWeight, newWeight, otherWeight, oldMin, newMin);
             }
 
             // 5. Вычисляем схожесть
-            double minWeightSum = inmemoryRepository.getMinWeightSum(eventId, otherEventId);
-            double eventWeightSum = inmemoryRepository.getEventWeightSum(eventId);
-            double otherEventWeightSum = inmemoryRepository.getEventWeightSum(otherEventId);
+            double minWeightSum = repository.getMinWeightSum(eventId, otherEventId);
+            double eventWeightSum = repository.getEventWeightSum(eventId);
+            double otherEventWeightSum = repository.getEventWeightSum(otherEventId);
 
             log.debug("Pair ({}, {}): minWeightSum={}, eventWeightSum={}, otherEventWeightSum={}",
                     eventId, otherEventId, minWeightSum, eventWeightSum, otherEventWeightSum);
@@ -101,7 +102,7 @@ public class EventSimilarityServiceImpl implements EventSimilarityService {
 
         // 7. Добавляем событие в историю пользователя (только если вес > 0)
         if (newWeight > 0) {
-            inmemoryRepository.putUserEvent(userId, eventId);
+            repository.putUserEvent(userId, eventId);
         }
 
         return eventSimilarityAvros;
