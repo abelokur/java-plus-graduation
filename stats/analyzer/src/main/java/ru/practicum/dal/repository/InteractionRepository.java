@@ -26,13 +26,15 @@ public interface InteractionRepository extends JpaRepository<Interaction, Long> 
     List<RecommendedEventProjection> getAggregatedRatingByEvent(@Param("eventIds") Set<Long> eventIds);
 
     @Query("""
-            SELECT i.eventId
+            SELECT
+                i.eventId as eventId,
+                i.rating as score
             FROM Interaction i
             WHERE i.userId = :userId
             ORDER BY i.createdAt DESC
             LIMIT :limit
             """)
-    List<Long> getRecentUserEvents(
+    List<RecommendedEventProjection> getRecentUserEvents(
             @Param("userId") long userId,
             @Param("limit") int limit);
 

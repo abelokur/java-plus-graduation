@@ -2,7 +2,7 @@ package ru.practicum.dal.model.mapper;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import ru.practicum.config.WeightConfig;
+import ru.practicum.config.AppConfig;
 import ru.practicum.dal.model.Interaction;
 import ru.practicum.dal.model.Similarity;
 import ru.practicum.ewm.stats.avro.ActionTypeAvro;
@@ -13,7 +13,7 @@ import ru.practicum.ewm.stats.proto.RecommendedEventProto;
 @RequiredArgsConstructor
 @Component
 public class Mapper {
-    private final WeightConfig weightConfig;
+    private final AppConfig weightConfig;
 
     public Interaction toInteractionFromAvro(UserActionAvro userActionAvro) {
         return Interaction.builder()
@@ -42,9 +42,9 @@ public class Mapper {
 
     private double getWeight(ActionTypeAvro actionType) {
         return switch (actionType) {
-            case VIEW -> weightConfig.getView();
-            case REGISTER -> weightConfig.getRegister();
-            case LIKE -> weightConfig.getLike();
+            case VIEW -> appConfig.getUserAction().getWeight().getView();
+            case REGISTER -> appConfig.getUserAction().getWeight().getRegister();
+            case LIKE -> appConfig.getUserAction().getWeight().getLike();
         };
     }
 }

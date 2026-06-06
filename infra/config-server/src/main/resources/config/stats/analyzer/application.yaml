@@ -50,6 +50,9 @@ analyzer:
       view: 0.4
       register: 0.8
       like: 1.0
+  event-similarity:
+    max-interactions: 10
+    max-nearby: 3
 
 logging:
   level:

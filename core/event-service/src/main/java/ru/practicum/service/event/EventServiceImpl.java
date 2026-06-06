@@ -231,9 +231,10 @@ public class EventServiceImpl implements EventService {
     public List<EventShortDto> findUserRecommendations(Long userId, Integer size) {
         UserShortDto user = getUser(userId);
 
-        List<RecommendedEventProto> recommendedEvents;
+        Map<Long, Double> recommendedEvents;
         try {
-            recommendedEvents = recommendationsClient.getRecommendationsForUser(userId, size).toList();
+            recommendedEvents = recommendationsClient.getRecommendationsForUser(userId, size)
+                    .collect(Collectors.toMap(RecommendedEventProto::getEventId, RecommendedEventProto::getScore));
         } catch (Exception e) {
             log.error("Error getting recommendations for user {}", userId, e);
             return Collections.emptyList();
@@ -243,11 +244,20 @@ public class EventServiceImpl implements EventService {
             return Collections.emptyList();
         }
 
-        List<Event> events = eventRepository.findAllById(recommendedEvents.stream()
-                .map(RecommendedEventProto::getEventId)
-                .collect(Collectors.toList()));
+        List<Event> events = eventRepository.findAllById(recommendedEvents.keySet());
 
-        return events.stream().map(e -> eventMapper.toShortDto(e, user)).toList();
+        Set<Long> initiatorIds = events.stream()
+                .map(Event::getInitiatorId)
+                .collect(Collectors.toSet());
+
+        Map<Long, UserShortDto> initiators = getUsers(initiatorIds);
+
+        return events.stream().map(e ->  {
+            e.setRating(recommendedEvents.get(e.getId()));
+            return eventMapper.toShortDto(e, initiators.get(e.getInitiatorId()));
+                })
+                .sorted(Comparator.comparing(EventShortDto::rating).reversed())
+                .toList();
     }
 
     @Override
