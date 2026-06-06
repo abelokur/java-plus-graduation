@@ -21,17 +21,17 @@ spring:
     password: postgres
 
 kafka:
-  event_similarity-consumer-properties:
+  event-similarity-consumer-properties:
     bootstrap.servers: localhost:9092
-    group.id: event_similarity-analyzer-group
+    group.id: event-similarity-analyzer-group
     key.deserializer: org.apache.kafka.common.serialization.LongDeserializer
     value.deserializer: ru.practicum.EventSimilarityDeserializer
     auto.offset.reset: earliest
     enable.auto.commit: false
 
-  user_action-consumer-properties:
+  user-action-consumer-properties:
     bootstrap.servers: localhost:9092
-    group.id: user_action-analyzer-group
+    group.id: user-action-analyzer-group
     key.deserializer: org.apache.kafka.common.serialization.LongDeserializer
     value.deserializer: ru.practicum.UserActionDeserializer
     auto.offset.reset: earliest
@@ -40,6 +40,13 @@ kafka:
   topics:
     USER_ACTION: stats.user-actions.v1
     EVENT_SIMILARITY: stats.events-similarity.v1
+
+analyzer:
+  user-action:
+    weight:
+      view: 0.4
+      register: 0.8
+      like: 1.0
 
 logging:
   level:

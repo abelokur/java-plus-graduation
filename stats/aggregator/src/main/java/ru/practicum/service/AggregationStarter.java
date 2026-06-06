@@ -11,7 +11,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import ru.practicum.config.KafkaConfig;
 import ru.practicum.config.TopicType;
-import ru.practicum.config.WeightConfig;
 import ru.practicum.ewm.stats.avro.EventSimilarityAvro;
 import ru.practicum.ewm.stats.avro.UserActionAvro;
 
@@ -76,14 +75,7 @@ public class AggregationStarter implements CommandLineRunner {
                 if (producer != null) {
                     producer.flush();
                 }
-                if (consumer != null) {
-                    consumer.commitSync();
-                }
             } finally {
-                log.info("Closing consumer");
-                if (consumer != null) {
-                    consumer.close();
-                }
                 log.info("Closing producer");
                 if (producer != null) {
                     producer.close();
