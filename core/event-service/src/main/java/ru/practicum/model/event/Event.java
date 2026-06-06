@@ -65,7 +65,7 @@ public class Event {
     private LocalDateTime createdOn = LocalDateTime.now();
 
     @Transient
-    private Long views;
+    private Double rating;
 
     @Column(name = "confirmed_requests")
     private Long confirmedRequests;

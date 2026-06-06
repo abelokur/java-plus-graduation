@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -28,19 +29,17 @@ import java.util.List;
 @LogAllMethods
 public class PublicEventController {
     private final EventService eventService;
-    private final StatsClient statsClient;
+    ///private final StatsClient statsClient;
 
-    @Value("${stats.service.name:event-service}")
-    private String serviceName;
+    ///@Value("${stats.service.name:event-service}")
+    ///private String serviceName;
 
     @GetMapping
     public ResponseEntity<List<EventShortDto>> findPublicEvents(
             @Valid @ModelAttribute EventPublicParam params,
             HttpServletRequest request) {
         List<EventShortDto> events = eventService.findPublicEvents(params);
-        if (!events.isEmpty()) {
-            saveHit(request);
-        }
+
         return ResponseEntity.ok(events);
     }
 
@@ -49,14 +48,37 @@ public class PublicEventController {
             @Positive(message = "eventId должен быть больше 0")
             @PathVariable
             Long id,
-            HttpServletRequest request
+            @RequestHeader("X-EWM-USER-ID")
+            Long userId
     ) {
-        EventFullDto event = eventService.findPublicEventById(id);
-        saveHit(request);
+        EventFullDto event = eventService.findPublicEventById(id, userId);
+        ///saveHit(request);
         return ResponseEntity.ok(event);
     }
 
-    private void saveHit(HttpServletRequest request) {
+    @GetMapping
+    public ResponseEntity<List<EventShortDto>> findUserRecommendations(
+            @RequestHeader("X-EWM-USER-ID") Long userId,
+            @RequestParam(defaultValue = "10")
+            @Positive(message = "size должен быть больше 0")
+            Integer size
+    ) {
+        return ResponseEntity.ok(eventService.findUserRecommendations(userId, size));
+    }
+
+    @PutMapping("/{id}/like")
+    public ResponseEntity<Void> addLikeToEvent(
+            @Positive(message = "eventId должен быть больше 0")
+            @PathVariable
+            Long id,
+            @RequestHeader("X-EWM-USER-ID")
+            Long userId
+    ) {
+        eventService.addLikeToEvent(id, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    /*private void saveHit(HttpServletRequest request) {
         try {
             statsClient.hit(HitCreateDto.builder()
                     .app(serviceName)
@@ -67,5 +89,5 @@ public class PublicEventController {
         } catch (Exception e) {
             log.warn("Failed to save hit for URI: {}", request.getRequestURI(), e);
         }
-    }
+    }*/
 }

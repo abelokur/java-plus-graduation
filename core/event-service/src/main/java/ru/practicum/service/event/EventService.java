@@ -12,7 +12,7 @@ public interface EventService {
 
     List<EventShortDto> findPublicEvents(EventPublicParam params);
 
-    EventFullDto findPublicEventById(Long eventId);
+    EventFullDto findPublicEventById(Long eventId, Long userId);
 
     List<EventShortDto> findUserEvents(Long userId, EventPrivateParam params);
 
@@ -27,4 +27,8 @@ public interface EventService {
     EventFullDto findByIdAndInitiatorId(Long eventId, Long initiatorId);
 
     void updateConfirmedRequests(Map<Long, Long> eventConfirmedRequests);
+
+    List<EventShortDto> findUserRecommendations(Long userId, Integer size);
+
+    void addLikeToEvent(Long eventId, Long userId);
 }

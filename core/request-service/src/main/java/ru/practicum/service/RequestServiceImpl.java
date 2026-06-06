@@ -1,5 +1,6 @@
 package ru.practicum.service;
 
+import ewm.client.stats.CollectorClient;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -38,6 +39,7 @@ public class RequestServiceImpl implements RequestService {
     private final TransactionTemplate transactionTemplate;
     private final UserClient userClient;
     private final EventClient eventClient;
+    private final CollectorClient collectorClient;
 
     private final RequestRepository requestRepository;
 
@@ -76,6 +78,14 @@ public class RequestServiceImpl implements RequestService {
         }
 
         validateCreation(userDto, event);
+
+        try {
+            collectorClient.saveRegister(userDto.id(), event.id());
+        } catch (Exception e) {
+            log.error("Unable to send user action to collector service [user id={}, event id={}]",
+                    userDto.id(), event.id());
+        }
+
 
         return requestMapper.toDto(requestRepository.save(Request.builder()
                 .createdOn(LocalDateTime.now())
@@ -177,6 +187,12 @@ public class RequestServiceImpl implements RequestService {
             return eventIds.stream().collect(Collectors.toMap(id -> id, id -> 0L));
         }
     }
+
+    @Override
+    public Boolean hasConfirmedRequestsForEventAndUser(Long eventId, Long userId) {
+        return requestRepository.existsByEventIdAndRequesterIdAndStatus(eventId, userId, RequestStatus.CONFIRMED);
+    }
+
 
     protected EventRequestStatusUpdateResult updateRequestStatusInternal(EventRequestStatusUpdateRequestParam requestParam) {
         ResponseEntity<EventFullDto> eventResponse = eventClient.getEventByIdAndInitiatorId(requestParam.eventId(), requestParam.userId());

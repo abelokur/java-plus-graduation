@@ -1,3 +1,6 @@
+server:
+  port: 0 # Порт, на котором будет работать сервис (0-выбирается случайным образом)
+
 kafka:
   producer-properties:
     bootstrap.servers: localhost:9092

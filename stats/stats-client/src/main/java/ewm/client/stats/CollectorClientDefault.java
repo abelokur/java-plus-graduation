@@ -19,7 +19,7 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class CollectorClientDefault implements CollectorClient {
     @GrpcClient("collector")
-    private final UserActionControllerGrpc.UserActionControllerBlockingStub actionClient;
+    private UserActionControllerGrpc.UserActionControllerBlockingStub actionClient;
 
     public void saveView(long userId, long eventId) {
         saveUserInteraction(userId, eventId, ActionTypeProto.ACTION_VIEW);

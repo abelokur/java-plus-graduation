@@ -31,4 +31,13 @@ public class ClientRequestController implements RequestClient {
         Map<Long, Long> confirmedRequests = requestService.getConfirmedRequestsForEvents(eventIds);
         return ResponseEntity.ok(confirmedRequests);
     }
+
+    @Override
+    @GetMapping("/{eventId}")
+    public ResponseEntity<Boolean> hasConfirmedRequestsForEventAndUser(
+            @PathVariable Long eventId,
+            @RequestHeader("X-EWM-USER-ID")
+            Long userId) {
+        return ResponseEntity.ok(requestService.hasConfirmedRequestsForEventAndUser(eventId, userId));
+    }
 }

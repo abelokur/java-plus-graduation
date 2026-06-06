@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -41,13 +40,6 @@ public abstract class BaseExceptionHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiError handleMissingServletRequestParameterException(final MissingServletRequestParameterException e) {
-        log.warn("400 {}", e.getMessage(), e);
-        return new ApiError("BAD_REQUEST", "Ожидался обязательный параметр", e.getMessage());
-    }
-
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiError handleMethodArgumentTypeMismatchException(final MethodArgumentTypeMismatchException e) {
         log.warn("400 {}", e.getMessage(), e);
         return new ApiError("BAD_REQUEST", "Несоответствие типов параметров", e.getMessage());
@@ -61,7 +53,7 @@ public abstract class BaseExceptionHandler {
                 .map(error -> String.format("%s: %s", error.getField(), error.getDefaultMessage()))
                 .toList();
         return new ApiError("BAD_REQUEST", "Переданные в метод контроллера данные, не проходят " +
-                                           "проверку на валидацию", e.getMessage(), errors);
+                "проверку на валидацию", e.getMessage(), errors);
     }
 
     @ExceptionHandler
@@ -91,7 +83,7 @@ public abstract class BaseExceptionHandler {
         log.warn("400 {}", e.getMessage(), e);
 
         return new ApiError("BAD_REQUEST", "Переданные в метод контроллера данные, не проходят " +
-                                           "проверку на валидацию", e.getMessage());
+                "проверку на валидацию", e.getMessage());
     }
 
     @ExceptionHandler

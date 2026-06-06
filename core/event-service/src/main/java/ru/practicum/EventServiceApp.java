@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 @SpringBootApplication
@@ -13,6 +14,10 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 @EnableDiscoveryClient
 @EnableAspectJAutoProxy
 @EnableCaching
+@ComponentScan(basePackages = {
+        "ru.practicum",
+        "ewm.client.stats"
+})
 @Slf4j
 public class EventServiceApp {
     public static void main(String[] args) {

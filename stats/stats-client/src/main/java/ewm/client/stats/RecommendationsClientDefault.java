@@ -28,7 +28,7 @@ public class RecommendationsClientDefault implements RecommendationsClient {
             maxAttempts = 5,
             backoff = @Backoff(delay = 300))
     @Override
-    public Stream<RecommendedEventProto> getRecommendationsForUser(long userId, int maxResults, ActionTypeProto action) {
+    public Stream<RecommendedEventProto> getRecommendationsForUser(long userId, int maxResults) {
         UserPredictionsRequestProto request = UserPredictionsRequestProto.newBuilder()
                 .setUserId(userId)
                 .setMaxResults(maxResults)
@@ -77,7 +77,7 @@ public class RecommendationsClientDefault implements RecommendationsClient {
             maxAttempts = 5,
             backoff = @Backoff(delay = 300))
     @Override
-    public Stream<RecommendedEventProto> GetInteractionsCount(List<Long> eventIds) {
+    public Stream<RecommendedEventProto> getInteractionsCount(List<Long> eventIds) {
         InteractionsCountRequestProto request = InteractionsCountRequestProto.newBuilder()
                 .addAllEventId(eventIds)
                 .build();
