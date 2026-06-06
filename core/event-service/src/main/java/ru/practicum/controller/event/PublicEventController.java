@@ -1,24 +1,18 @@
 package ru.practicum.controller.event;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.annotation.LogAllMethods;
-import ru.practicum.client.StatsClient;
-import ru.practicum.dto.HitCreateDto;
 import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.dto.event.EventPublicParam;
 import ru.practicum.dto.event.EventShortDto;
 import ru.practicum.service.event.EventService;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -29,15 +23,10 @@ import java.util.List;
 @LogAllMethods
 public class PublicEventController {
     private final EventService eventService;
-    ///private final StatsClient statsClient;
-
-    ///@Value("${stats.service.name:event-service}")
-    ///private String serviceName;
 
     @GetMapping
     public ResponseEntity<List<EventShortDto>> findPublicEvents(
-            @Valid @ModelAttribute EventPublicParam params,
-            HttpServletRequest request) {
+            @Valid @ModelAttribute EventPublicParam params) {
         List<EventShortDto> events = eventService.findPublicEvents(params);
 
         return ResponseEntity.ok(events);
@@ -52,11 +41,10 @@ public class PublicEventController {
             Long userId
     ) {
         EventFullDto event = eventService.findPublicEventById(id, userId);
-        ///saveHit(request);
         return ResponseEntity.ok(event);
     }
 
-    @GetMapping
+    @GetMapping("/recommendations")
     public ResponseEntity<List<EventShortDto>> findUserRecommendations(
             @RequestHeader("X-EWM-USER-ID") Long userId,
             @RequestParam(defaultValue = "10")

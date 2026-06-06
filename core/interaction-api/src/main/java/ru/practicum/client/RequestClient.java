@@ -16,7 +16,7 @@ public interface RequestClient {
     @GetMapping
     ResponseEntity<Map<Long, Long>> getConfirmedRequestsForEvents(@RequestParam List<Long> eventIds);
 
-    @GetMapping("/{eventId}")
+    @GetMapping("/{eventId}/confirmed")
     ResponseEntity<Boolean> hasConfirmedRequestsForEventAndUser(
             @PathVariable Long eventId,
             @RequestHeader("X-EWM-USER-ID") Long userId);

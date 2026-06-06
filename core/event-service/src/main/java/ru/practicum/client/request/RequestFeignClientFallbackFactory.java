@@ -31,9 +31,9 @@ public class RequestFeignClientFallbackFactory implements FallbackFactory<Reques
             }
 
             @Override
-            public Boolean hasConfirmedRequestsForEventAndUser(Long eventId, Long userId) {
+            public ResponseEntity<Boolean> hasConfirmedRequestsForEventAndUser(Long eventId, Long userId) {
                 fastFallBack(cause);
-                return null;
+                return ResponseEntity.ok(null);
             }
         };
     }
