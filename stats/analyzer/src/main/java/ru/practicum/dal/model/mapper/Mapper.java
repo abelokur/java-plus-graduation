@@ -13,7 +13,7 @@ import ru.practicum.ewm.stats.proto.RecommendedEventProto;
 @RequiredArgsConstructor
 @Component
 public class Mapper {
-    private final AppConfig weightConfig;
+    private final AppConfig appConfig;
 
     public Interaction toInteractionFromAvro(UserActionAvro userActionAvro) {
         return Interaction.builder()
