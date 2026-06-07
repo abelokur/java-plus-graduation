@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.client.RequestClient;
@@ -265,7 +266,11 @@ public class EventServiceImpl implements EventService {
         Boolean hasConfirmedRequests;
 
         try {
-            hasConfirmedRequests = requestClient.hasConfirmedRequestsForEventAndUser(eventId, userId);
+            ResponseEntity<Boolean> response = requestClient.hasConfirmedRequestsForEventAndUser(eventId, userId);
+            hasConfirmedRequests = response.getBody();
+            if (hasConfirmedRequests == null) {
+                throw new ServiceTemporaryUnavailableException("Requests service returned null response");
+            }
         } catch (Exception e) {
             log.error("Error getting confirmed requests for event {} by user {}", eventId, userId, e);
             throw new ServiceTemporaryUnavailableException("Requests service is temporary unavailable");
@@ -312,7 +317,14 @@ public class EventServiceImpl implements EventService {
     }
 
     private void setConfirmedRequests(Event event) {
-        event.setConfirmedRequests(requestClient.getConfirmedRequests(event.getId()));
+        try {
+            ResponseEntity<Long> response = requestClient.getConfirmedRequests(event.getId());
+            Long confirmedRequests = response.getBody();
+            event.setConfirmedRequests(confirmedRequests != null ? confirmedRequests : 0L);
+        } catch (Exception e) {
+            log.warn("Error getting confirmed requests for event {}", event.getId(), e);
+            event.setConfirmedRequests(0L);
+        }
     }
 
     private void setRatingAndConfirmedRequests(Event event) {
@@ -407,11 +419,21 @@ public class EventServiceImpl implements EventService {
     }
 
     private Map<Long, UserShortDto> getUsers(Set<Long> usersIds) {
-        return userClient.getUsersByIds(usersIds).stream()
+        ResponseEntity<Set<UserDto>> response = userClient.getUsersByIds(usersIds);
+        Set<UserDto> users = response.getBody();
+        if (users == null) {
+            return Collections.emptyMap();
+        }
+        return users.stream()
                 .collect(Collectors.toMap(UserDto::id, UserDto::toShortDto));
     }
 
     private UserShortDto getUser(Long userId) {
-        return userClient.getUserById(userId).toShortDto();
+        ResponseEntity<UserDto> response = userClient.getUserById(userId);
+        UserDto userDto = response.getBody();
+        if (userDto == null) {
+            throw new NotFoundException("User with id " + userId + " not found");
+        }
+        return userDto.toShortDto();
     }
 }
