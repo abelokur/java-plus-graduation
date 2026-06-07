@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import ru.practicum.client.EventClient;
 import ru.practicum.client.UserClient;
-import ru.practicum.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.dto.EventRequestStatusUpdateRequestParam;
 import ru.practicum.dto.EventRequestStatusUpdateResult;
 import ru.practicum.dto.event.EventFullDto;
@@ -206,11 +205,9 @@ public class RequestServiceImpl implements RequestService {
                     + " не является организатором события id=" + requestParam.eventId());
         }
 
-        // ПОЛУЧАЕМ АКТУАЛЬНОЕ КОЛИЧЕСТВО ПОДТВЕРЖДЕННЫХ ЗАЯВОК ИЗ БД
         Long currentConfirmed = getConfirmedRequests(requestParam.eventId());
         log.debug("Current confirmed requests for event {}: {}", requestParam.eventId(), currentConfirmed);
 
-        // Проверка лимита при подтверждении всех запросов
         if (requestParam.updateRequest().status().equals(RequestStatus.CONFIRMED) &&
                 event.participantLimit() != 0 &&
                 currentConfirmed >= event.participantLimit()) {
@@ -219,7 +216,6 @@ public class RequestServiceImpl implements RequestService {
 
         List<Request> requestsToUpdate = requestRepository.findAllById(requestParam.updateRequest().requestIds());
 
-        // Проверка, что все заявки в статусе PENDING
         for (Request request : requestsToUpdate) {
             if (!request.getStatus().equals(RequestStatus.PENDING)) {
                 throw new ConditionsNotMetException(
@@ -228,12 +224,10 @@ public class RequestServiceImpl implements RequestService {
             }
         }
 
-        // Если лимита нет или модерация отключена - подтверждаем все заявки
         if (event.participantLimit() == 0 || !event.requestModeration()) {
             requestsToUpdate.forEach(request -> request.setStatus(RequestStatus.CONFIRMED));
             requestRepository.saveAll(requestsToUpdate);
 
-            // ИСПРАВЛЕНО: обновляем confirmedRequests в event через eventClient
             Map<Long, Long> confirmedRequestsMap = Map.of(event.id(),
                     currentConfirmed + (long) requestsToUpdate.size());
             try {
@@ -248,7 +242,6 @@ public class RequestServiceImpl implements RequestService {
         List<Request> confirmedRequests = new ArrayList<>();
         List<Request> rejectedRequests = new ArrayList<>();
 
-        // ИСПРАВЛЕНО: используем актуальное количество слотов
         long availableSlots = event.participantLimit() - currentConfirmed;
         log.debug("Available slots for event {}: {}", event.id(), availableSlots);
 
@@ -263,7 +256,6 @@ public class RequestServiceImpl implements RequestService {
             }
         }
 
-        // Сохраняем все изменения
         if (!confirmedRequests.isEmpty()) {
             requestRepository.saveAll(confirmedRequests);
         }
@@ -271,7 +263,6 @@ public class RequestServiceImpl implements RequestService {
             requestRepository.saveAll(rejectedRequests);
         }
 
-        // ИСПРАВЛЕНО: обновляем confirmedRequests в event, если были подтвержденные
         if (!confirmedRequests.isEmpty()) {
             Long newConfirmedCount = currentConfirmed + (long) confirmedRequests.size();
             Map<Long, Long> confirmedRequestsMap = Map.of(event.id(), newConfirmedCount);
@@ -287,64 +278,6 @@ public class RequestServiceImpl implements RequestService {
                 requestMapper.toDto(rejectedRequests)
         );
     }
-    /*protected EventRequestStatusUpdateResult updateRequestStatusInternal(EventRequestStatusUpdateRequestParam requestParam) {
-        ResponseEntity<EventFullDto> eventResponse = eventClient.getEventByIdAndInitiatorId(requestParam.eventId(), requestParam.userId());
-        EventFullDto event = eventResponse.getBody();
-
-        if (event == null) {
-            throw new NotFoundException("Событие id=" + requestParam.eventId() + " не найдено");
-        }
-
-        if (!event.initiator().id().equals(requestParam.userId())) {
-            throw new ValidationException("Пользователь id=" + requestParam.userId()
-                    + " не является организатором события id=" + requestParam.eventId());
-        }
-
-        Long confirmed = getConfirmedRequests(requestParam.eventId());
-
-        if (requestParam.updateRequest().status().equals(RequestStatus.CONFIRMED) &&
-                event.participantLimit() != 0 &&
-                confirmed >= event.participantLimit()) {
-            throw new ConditionsNotMetException("Достигнут лимит по заявкам на событие - " + event.id());
-        }
-
-        List<Request> requestsToUpdate = requestRepository.findAllById(requestParam.updateRequest().requestIds());
-
-        requestsToUpdate.forEach(request -> {
-            if (!request.getStatus().equals(RequestStatus.PENDING)) {
-                throw new ConditionsNotMetException(
-                        "Статус можно изменить только у заявок в состоянии ожидания. " +
-                                "Текущий статус заявки " + request.getId() + ": " + request.getStatus());
-            }
-        });
-
-        if (event.participantLimit() == 0 || !event.requestModeration()) {
-            requestsToUpdate.forEach(request -> request.setStatus(RequestStatus.CONFIRMED));
-
-            return new EventRequestStatusUpdateResult(requestMapper.toDto(requestsToUpdate), List.of());
-        }
-
-        List<Request> confirmedRequests = new ArrayList<>();
-        List<Request> rejectedRequests = new ArrayList<>();
-
-        long availableSlots = event.participantLimit() - event.confirmedRequests();
-
-        for (Request request : requestsToUpdate) {
-            if (availableSlots > 0 && requestParam.updateRequest().status().equals(RequestStatus.CONFIRMED)) {
-                request.setStatus(RequestStatus.CONFIRMED);
-                confirmedRequests.add(request);
-                availableSlots--;
-            } else {
-                request.setStatus(RequestStatus.REJECTED);
-                rejectedRequests.add(request);
-            }
-        }
-
-        return new EventRequestStatusUpdateResult(
-                requestMapper.toDto(confirmedRequests),
-                requestMapper.toDto(rejectedRequests)
-        );
-    }*/
 
     private Request getRequestById(Long requestId) {
         return requestRepository.findById(requestId)
