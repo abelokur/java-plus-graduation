@@ -2,20 +2,17 @@ package ru.practicum.repository;
 
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 
 @Component
 public class InMemoryRepository implements BaseRepository {
-    private final Map<Long, Map<Long, Double>> minWeightsSums = new ConcurrentHashMap<>(); // Map<Event, Map<Event, S_min>> // числитель
-    private final Map<Long, Map<Long, Double>> eventUserWeights = new ConcurrentHashMap<>(); // Map<Event, Map<User, Weight>> //для вычисления числителя
+    private final Map<Long, Map<Long, Double>> minWeightsSums = new ConcurrentHashMap<>();
+    private final Map<Long, Map<Long, Double>> eventUserWeights = new ConcurrentHashMap<>();
 
-    private final Map<Long, Double> eventWeightsSums = new ConcurrentHashMap<>(); // Map<Event, Sum_Weights> // знаменатель
-    private final Map<Long, Set<Long>> userEvents = new ConcurrentHashMap<>(); // Map<User, Set<Event>> // вспомогательная таблица, что бы хранить все события с которыми взаимодействовал пользователь
+    private final Map<Long, Double> eventWeightsSums = new ConcurrentHashMap<>();
+    private final Map<Long, Set<Long>> userEvents = new ConcurrentHashMap<>();
 
 
     @Override
@@ -46,10 +43,9 @@ public class InMemoryRepository implements BaseRepository {
     }
 
     @Override
-    public double getEventUserWeight(long event, long user) {
-        return eventUserWeights
-                .computeIfAbsent(event, e -> new ConcurrentHashMap<>())
-                .getOrDefault(user, 0.0);
+    public Optional<Double> getEventUserWeight(long event, long user) {
+        return Optional.ofNullable(eventUserWeights.get(event))
+                .flatMap(userWeights -> Optional.ofNullable(userWeights.get(user)));
     }
 
     @Override

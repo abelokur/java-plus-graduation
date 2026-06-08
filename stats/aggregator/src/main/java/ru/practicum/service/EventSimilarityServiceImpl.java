@@ -33,7 +33,7 @@ public class EventSimilarityServiceImpl implements EventSimilarityService {
         long userId = userAction.getUserId();
         long eventId = userAction.getEventId();
 
-        double oldWeight = repository.getEventUserWeight(eventId, userId);
+        double oldWeight = repository.getEventUserWeight(eventId, userId).orElse(0.0);
         double newWeight = getWeight(userAction.getActionType());
         double deltaWeight = newWeight - oldWeight;
 
@@ -61,7 +61,7 @@ public class EventSimilarityServiceImpl implements EventSimilarityService {
 
         // 4. Для каждого другого события пользователя
         for (Long otherEventId : userEvents) {
-            double otherWeight = repository.getEventUserWeight(otherEventId, userId);
+            double otherWeight = repository.getEventUserWeight(otherEventId, userId).orElse(0.0);
 
             double oldMin = Math.min(oldWeight, otherWeight);
             double newMin = Math.min(newWeight, otherWeight);

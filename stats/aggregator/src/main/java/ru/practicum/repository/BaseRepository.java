@@ -1,5 +1,6 @@
 package ru.practicum.repository;
 
+import java.util.Optional;
 import java.util.Set;
 
 public interface BaseRepository {
@@ -9,7 +10,7 @@ public interface BaseRepository {
 
     void putEventUserWeight(long event, long user, double weight);
 
-    double getEventUserWeight(long event, long user);
+    Optional<Double> getEventUserWeight(long event, long user);
 
     void putUserEvent(long user, long event);
 
