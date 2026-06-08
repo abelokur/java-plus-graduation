@@ -29,6 +29,12 @@ public class RequestFeignClientFallbackFactory implements FallbackFactory<Reques
                         .collect(Collectors.toMap(Function.identity(), e -> 0L));
                 return ResponseEntity.ok(defaultMap);
             }
+
+            @Override
+            public ResponseEntity<Boolean> hasConfirmedRequestsForEventAndUser(Long eventId, Long userId) {
+                fastFallBack(cause);
+                return ResponseEntity.ok(null);
+            }
         };
     }
 }

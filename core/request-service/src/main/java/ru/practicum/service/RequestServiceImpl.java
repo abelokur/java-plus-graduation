@@ -1,5 +1,6 @@
 package ru.practicum.service;
 
+import ewm.client.stats.CollectorClient;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -9,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import ru.practicum.client.EventClient;
 import ru.practicum.client.UserClient;
-import ru.practicum.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.dto.EventRequestStatusUpdateRequestParam;
 import ru.practicum.dto.EventRequestStatusUpdateResult;
 import ru.practicum.dto.event.EventFullDto;
@@ -38,6 +38,7 @@ public class RequestServiceImpl implements RequestService {
     private final TransactionTemplate transactionTemplate;
     private final UserClient userClient;
     private final EventClient eventClient;
+    private final CollectorClient collectorClient;
 
     private final RequestRepository requestRepository;
 
@@ -76,6 +77,14 @@ public class RequestServiceImpl implements RequestService {
         }
 
         validateCreation(userDto, event);
+
+        try {
+            collectorClient.saveRegister(userDto.id(), event.id());
+        } catch (Exception e) {
+            log.error("Unable to send user action to collector service [user id={}, event id={}]",
+                    userDto.id(), event.id());
+        }
+
 
         return requestMapper.toDto(requestRepository.save(Request.builder()
                 .createdOn(LocalDateTime.now())
@@ -178,6 +187,11 @@ public class RequestServiceImpl implements RequestService {
         }
     }
 
+    @Override
+    public Boolean hasConfirmedRequestsForEventAndUser(Long eventId, Long userId) {
+        return requestRepository.existsByEventIdAndRequesterIdAndStatus(eventId, userId, RequestStatus.CONFIRMED);
+    }
+
     protected EventRequestStatusUpdateResult updateRequestStatusInternal(EventRequestStatusUpdateRequestParam requestParam) {
         ResponseEntity<EventFullDto> eventResponse = eventClient.getEventByIdAndInitiatorId(requestParam.eventId(), requestParam.userId());
         EventFullDto event = eventResponse.getBody();
@@ -191,26 +205,36 @@ public class RequestServiceImpl implements RequestService {
                     + " не является организатором события id=" + requestParam.eventId());
         }
 
-        Long confirmed = getConfirmedRequests(requestParam.eventId());
+        Long currentConfirmed = getConfirmedRequests(requestParam.eventId());
+        log.debug("Current confirmed requests for event {}: {}", requestParam.eventId(), currentConfirmed);
 
         if (requestParam.updateRequest().status().equals(RequestStatus.CONFIRMED) &&
                 event.participantLimit() != 0 &&
-                confirmed >= event.participantLimit()) {
+                currentConfirmed >= event.participantLimit()) {
             throw new ConditionsNotMetException("Достигнут лимит по заявкам на событие - " + event.id());
         }
 
         List<Request> requestsToUpdate = requestRepository.findAllById(requestParam.updateRequest().requestIds());
 
-        requestsToUpdate.forEach(request -> {
+        for (Request request : requestsToUpdate) {
             if (!request.getStatus().equals(RequestStatus.PENDING)) {
                 throw new ConditionsNotMetException(
                         "Статус можно изменить только у заявок в состоянии ожидания. " +
                                 "Текущий статус заявки " + request.getId() + ": " + request.getStatus());
             }
-        });
+        }
 
         if (event.participantLimit() == 0 || !event.requestModeration()) {
             requestsToUpdate.forEach(request -> request.setStatus(RequestStatus.CONFIRMED));
+            requestRepository.saveAll(requestsToUpdate);
+
+            Map<Long, Long> confirmedRequestsMap = Map.of(event.id(),
+                    currentConfirmed + (long) requestsToUpdate.size());
+            try {
+                eventClient.updateEventsConfirmedRequests(confirmedRequestsMap);
+            } catch (Exception e) {
+                log.error("Error updating confirmed requests for event {}", event.id(), e);
+            }
 
             return new EventRequestStatusUpdateResult(requestMapper.toDto(requestsToUpdate), List.of());
         }
@@ -218,7 +242,8 @@ public class RequestServiceImpl implements RequestService {
         List<Request> confirmedRequests = new ArrayList<>();
         List<Request> rejectedRequests = new ArrayList<>();
 
-        long availableSlots = event.participantLimit() - event.confirmedRequests();
+        long availableSlots = event.participantLimit() - currentConfirmed;
+        log.debug("Available slots for event {}: {}", event.id(), availableSlots);
 
         for (Request request : requestsToUpdate) {
             if (availableSlots > 0 && requestParam.updateRequest().status().equals(RequestStatus.CONFIRMED)) {
@@ -228,6 +253,23 @@ public class RequestServiceImpl implements RequestService {
             } else {
                 request.setStatus(RequestStatus.REJECTED);
                 rejectedRequests.add(request);
+            }
+        }
+
+        if (!confirmedRequests.isEmpty()) {
+            requestRepository.saveAll(confirmedRequests);
+        }
+        if (!rejectedRequests.isEmpty()) {
+            requestRepository.saveAll(rejectedRequests);
+        }
+
+        if (!confirmedRequests.isEmpty()) {
+            Long newConfirmedCount = currentConfirmed + (long) confirmedRequests.size();
+            Map<Long, Long> confirmedRequestsMap = Map.of(event.id(), newConfirmedCount);
+            try {
+                eventClient.updateEventsConfirmedRequests(confirmedRequestsMap);
+            } catch (Exception e) {
+                log.error("Error updating confirmed requests for event {}", event.id(), e);
             }
         }
 

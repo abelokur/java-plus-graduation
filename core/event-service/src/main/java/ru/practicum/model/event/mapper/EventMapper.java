@@ -19,7 +19,7 @@ public interface EventMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "publishedOn", ignore = true)
     @Mapping(target = "createdOn", ignore = true)
-    @Mapping(target = "views", constant = "0L")
+    @Mapping(target = "rating", constant = "0.0")
     @Mapping(target = "confirmedRequests", constant = "0L")
     @Mapping(target = "location", source = "dto.location")
     @Mapping(target = "category", source = "category")

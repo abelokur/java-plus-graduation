@@ -1,6 +1,3 @@
-server:
-  port: 0 # Порт, на котором будет работать сервис (0-выбирается случайным образом)
-
 spring:
   application:
     name: request-service # Имя текущего микросервиса, используется для идентификации в Eureka и Config Server

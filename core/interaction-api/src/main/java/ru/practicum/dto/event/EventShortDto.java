@@ -20,7 +20,7 @@ public record EventShortDto(
         UserShortDto initiator,
         Boolean paid,
         String title,
-        Long views
+        Double rating
 ) {
     @Builder(toBuilder = true)
     public EventShortDto {

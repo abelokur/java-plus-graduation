@@ -1,0 +1,24 @@
+server:
+  port: 0 # Порт, на котором будет работать сервис (0-выбирается случайным образом)
+
+grpc:
+  server:
+    port: 0
+
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+
+kafka:
+  producer-properties:
+    bootstrap.servers: localhost:9092
+    key.serializer: org.apache.kafka.common.serialization.LongSerializer
+    value.serializer: ru.practicum.GeneralAvroSerializer
+
+  topics:
+    USER_ACTION: stats.user-actions.v1
+    EVENT_SIMILARITY: stats.events-similarity.v1
+
+logging:
+  level:
+    ru.practicum: DEBUG

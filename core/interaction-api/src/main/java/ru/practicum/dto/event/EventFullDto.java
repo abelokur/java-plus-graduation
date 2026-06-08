@@ -53,7 +53,7 @@ public record EventFullDto(
         @NotBlank
         String title,
 
-        Long views
+        Double rating
 ) {
     @Builder(toBuilder = true)
     public EventFullDto {
@@ -69,7 +69,7 @@ public record EventFullDto(
                 .initiator(this.initiator())
                 .paid(this.paid())
                 .title(this.title())
-                .views(this.views())
+                .rating(this.rating())
                 .build();
     }
 }

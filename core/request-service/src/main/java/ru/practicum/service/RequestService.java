@@ -21,4 +21,6 @@ public interface RequestService {
     Long getConfirmedRequests(Long eventId);
 
     Map<Long, Long> getConfirmedRequestsForEvents(List<Long> eventIds);
+
+    Boolean hasConfirmedRequestsForEventAndUser(Long eventId, Long userId);
 }

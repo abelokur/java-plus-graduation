@@ -1,3 +1,6 @@
+server:
+  port: 0 # Порт, на котором будет работать сервис (0-выбирается случайным образом)
+
 spring:
   jpa:
     hibernate.ddl-auto: none
@@ -54,7 +57,4 @@ management:
         include: health,info,metrics,circuitbreakers,configprops,loggers,retries  # Список эндпоинтов Actuator для экспозиции через веб
 
 stats:
-  service:
-    name: "comment-service"
-    id: "stats-server"
   date_time.format: "yyyy-MM-dd HH:mm:ss"
